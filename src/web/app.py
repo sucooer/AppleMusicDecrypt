@@ -18,7 +18,7 @@ STATIC_DIR = Path(__file__).with_name("static")
 
 def create_app(service: WebUIService) -> FastAPI:
     app = FastAPI(title="AppleMusicDecrypt Web UI")
-    auth = WebAuthService(service._wrapper_manager)
+    auth = WebAuthService(service.wrapper_manager)
 
     @app.get("/api/system/status")
     async def get_system_status():
@@ -55,13 +55,13 @@ def create_app(service: WebUIService) -> FastAPI:
     @app.get("/api/events")
     async def events():
         async def stream():
-            queue = await service._event_bus.subscribe()
+            queue = await service.event_bus.subscribe()
             try:
                 while True:
                     item = await queue.get()
                     yield f"event: {item.event}\ndata: {json.dumps({'timestamp': item.timestamp, **item.data}, ensure_ascii=False)}\n\n"
             finally:
-                await service._event_bus.unsubscribe(queue)
+                await service.event_bus.unsubscribe(queue)
 
         return StreamingResponse(stream(), media_type="text/event-stream")
 

@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+
+from creart import it
+from src.api import WebAPI
+from src.config import Config
 from src.flags import Flags
+from src.grpc.manager import WrapperManager
 from src.quality import get_available_audio_quality
 from src.url import AppleMusicURL, URLType
 from src.web.events import EventBus
@@ -14,6 +20,14 @@ class WebUIService:
         self._measurer = measurer
         self._ripper = ripper
         self._current_task = TaskSnapshot()
+
+    @property
+    def wrapper_manager(self):
+        return self._wrapper_manager
+
+    @property
+    def event_bus(self):
+        return self._event_bus
 
     def current_task(self) -> TaskSnapshot:
         return self._current_task
@@ -78,18 +92,24 @@ class WebUIService:
         await self._event_bus.publish("task.state", snapshot.model_dump())
 
         flags = Flags(force_save=request.force, language=request.language)
+
+        async def _run_with_error_handling(coro):
+            try:
+                await coro
+            except Exception as exc:
+                self._current_task = self._current_task.model_copy(
+                    update={"state": "failed", "error": str(exc)}
+                )
+                await self._event_bus.publish("task.state", self._current_task.model_dump())
+
         if parsed.type == URLType.Song:
-            import asyncio
-            asyncio.create_task(self._ripper.rip_song(parsed, request.codec, flags))
+            asyncio.create_task(_run_with_error_handling(self._ripper.rip_song(parsed, request.codec, flags)))
         elif parsed.type == URLType.Album:
-            import asyncio
-            asyncio.create_task(self._ripper.rip_album(parsed, request.codec, flags))
+            asyncio.create_task(_run_with_error_handling(self._ripper.rip_album(parsed, request.codec, flags)))
         elif parsed.type == URLType.Artist:
-            import asyncio
-            asyncio.create_task(self._ripper.rip_artist(parsed, request.codec, flags))
+            asyncio.create_task(_run_with_error_handling(self._ripper.rip_artist(parsed, request.codec, flags)))
         elif parsed.type == URLType.Playlist:
-            import asyncio
-            asyncio.create_task(self._ripper.rip_playlist(parsed, request.codec, flags))
+            asyncio.create_task(_run_with_error_handling(self._ripper.rip_playlist(parsed, request.codec, flags)))
         else:
             raise ValueError(f"Unsupported URLType: {parsed.type}")
 
@@ -99,12 +119,6 @@ class WebUIService:
         parsed = AppleMusicURL.parse_url(request.url)
         if not parsed:
             raise ValueError("Invalid Apple Music URL")
-
-        from creart import it
-        from src.api import WebAPI
-        from src.config import Config
-        from src.grpc.manager import WrapperManager
-        from src.url import Song
 
         async def collect_song_quality(song_id: str, storefront: str, track_label: str | None = None) -> list[QualityItem]:
             m3u8_url = await it(WrapperManager).m3u8(song_id)
