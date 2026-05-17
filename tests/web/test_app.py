@@ -78,3 +78,13 @@ def test_download_endpoint_rejects_blank_url():
     response = client.post("/api/task/download", json={"url": "   "})
 
     assert response.status_code == 422
+
+
+def test_root_serves_html_page():
+    app = create_app(service=build_service())
+    client = TestClient(app)
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "AppleMusicDecrypt Web UI" in response.text

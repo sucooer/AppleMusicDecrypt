@@ -96,3 +96,19 @@ There are two possible causes for this problem:
 
 ### The bit depth of the ripped audio file does not match the selected codec
 Some audio files provided by Apple Music are incorrectly encoded to a higher bit depth. This does not affect the content of the audio itself.
+
+## Web UI
+
+Install server dependencies:
+
+```bash
+poetry install --with server,dev
+```
+
+Run the local web UI:
+
+```bash
+poetry run python web_main.py
+```
+
+Open `http://127.0.0.1:8000` and use the panel for download, quality lookup, wrapper-manager login/logout, and live logs.

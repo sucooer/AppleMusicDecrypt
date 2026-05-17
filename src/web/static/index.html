@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AppleMusicDecrypt Web UI</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="panel panel-actions">
+      <h1>AppleMusicDecrypt Web UI</h1>
+      <p class="subtitle">Local single-task control panel</p>
+      <label class="field">
+        <span>Apple Music URL</span>
+        <input id="url" type="url" placeholder="https://music.apple.com/...">
+      </label>
+      <div class="grid two-up">
+        <label class="field">
+          <span>Codec</span>
+          <select id="codec">
+            <option value="alac">alac</option>
+            <option value="aac">aac</option>
+            <option value="ec3">ec3</option>
+            <option value="ac3">ac3</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Language</span>
+          <select id="language">
+            <option value="zh-Hans-CN">zh-Hans-CN</option>
+            <option value="en-US">en-US</option>
+            <option value="ja">ja</option>
+          </select>
+        </label>
+      </div>
+      <label class="toggle"><input id="force" type="checkbox"> <span>Force overwrite</span></label>
+      <div class="grid two-up">
+        <button id="download-btn">Download</button>
+        <button id="quality-btn" class="secondary">Quality</button>
+        <button id="login-btn" class="secondary">Login</button>
+        <button id="logout-btn" class="secondary">Logout</button>
+      </div>
+      <section class="summary-card">
+        <h2>Current Task</h2>
+        <dl>
+          <div><dt>State</dt><dd id="task-state">idle</dd></div>
+          <div><dt>Saved Path</dt><dd id="saved-path">-</dd></div>
+          <div><dt>Error</dt><dd id="task-error">-</dd></div>
+        </dl>
+      </section>
+      <section class="summary-card">
+        <h2>Wrapper Manager</h2>
+        <dl>
+          <div><dt>Ready</dt><dd id="wm-ready">unknown</dd></div>
+          <div><dt>Regions</dt><dd id="wm-regions">-</dd></div>
+        </dl>
+      </section>
+    </section>
+
+    <section class="panel panel-monitor">
+      <div class="status-cards">
+        <article class="status-card"><span>Download Speed</span><strong id="download-speed">0.00 kB/s</strong></article>
+        <article class="status-card"><span>Decrypt Speed</span><strong id="decrypt-speed">0.00 kB/s</strong></article>
+        <article class="status-card"><span>Active Tasks</span><strong id="active-tasks">0</strong></article>
+      </div>
+      <section class="quality-panel">
+        <h2>Quality Result</h2>
+        <pre id="quality-output">No quality request yet.</pre>
+      </section>
+      <section class="log-panel">
+        <h2>Live Log</h2>
+        <div id="log-output"></div>
+      </section>
+    </section>
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
