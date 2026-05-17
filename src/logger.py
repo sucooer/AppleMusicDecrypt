@@ -1,21 +1,45 @@
 import copy
 import urllib.parse
-from typing import Type
+from datetime import datetime, timezone
+from typing import Callable, Type
 
 from creart import AbstractCreator, CreateTargetInfo, exists_module
 from loguru import logger
-from prompt_toolkit import print_formatted_text, ANSI
+from prompt_toolkit import ANSI, print_formatted_text
+
+
+LogSink = Callable[[dict], None]
+ACTIVE_LOG_SINK: LogSink | None = None
+
+
+def set_log_sink(sink: LogSink | None) -> None:
+    global ACTIVE_LOG_SINK
+    ACTIVE_LOG_SINK = sink
+
+
+def _emit_to_console(message):
+    print_formatted_text(ANSI(message), end="")
+
+
+def _emit_to_sink(source: str, record):
+    if ACTIVE_LOG_SINK is None:
+        return
+    ACTIVE_LOG_SINK(
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record["level"].name,
+            "source": source,
+            "message": record["message"],
+        }
+    )
 
 
 class GlobalLogger:
     def __init__(self):
         logger.remove()
         self.logger = copy.deepcopy(logger)
-        self.logger.add(lambda msg: print_formatted_text(ANSI(msg), end=""), colorize=True,
-                        format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>"
-                               + " | <level>{level}</level>"
-                               + " - <level>{message}</level>",
-                        level="INFO")
+        self.logger.add(lambda msg: _emit_to_console(msg), colorize=True, format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level}</level> - <level>{message}</level>", level="INFO")
+        self.logger.add(lambda msg: _emit_to_sink("system", msg.record), format="{message}", level="INFO")
 
 
 class LoggerCreator(AbstractCreator):
@@ -43,16 +67,17 @@ class RipLogger:
         self.item_id = urllib.parse.quote(item_id)
         logger.remove()
         self.logger = copy.deepcopy(logger)
-        self.logger.add(lambda msg: print_formatted_text(ANSI(msg), end=""), colorize=True,
+        self.logger.add(lambda msg: _emit_to_console(msg), colorize=True,
                         format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>"
                                + f" | <b>{self.item_type.upper()}</b>"
                                + f" | <b>{self.item_id}</b>"
                                + " | <level>{level}</level>"
                                + " - <level>{message}</level>",
                         level="INFO")
+        self.logger.add(lambda msg: _emit_to_sink("task", msg.record), format="{message}", level="INFO")
 
     def create(self):
-        self.logger.info(f"Start ripping...")
+        self.logger.info("Start ripping...")
 
     def set_fullname(self, artist: str, name: str = None):
         if not name:
@@ -61,13 +86,14 @@ class RipLogger:
             self.full_name = f"{artist} - {name}"
         self.full_name = self.full_name.replace("<", "\\<").replace(">", "\\>")
         self.logger.remove()
-        self.logger.add(lambda msg: print_formatted_text(ANSI(msg), end=""), colorize=True,
+        self.logger.add(lambda msg: _emit_to_console(msg), colorize=True,
                         format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>"
                                + f" | <b>{self.item_type.upper()}</b>"
                                + f" | <b>{self.full_name}</b>"
                                + " | <level>{level}</level>"
                                + " - <level>{message}</level>",
                         level="INFO")
+        self.logger.add(lambda msg: _emit_to_sink("task", msg.record), format="{message}", level="INFO")
 
     def not_exist(self):
         self.logger.error(
@@ -104,8 +130,11 @@ class RipLogger:
         else:
             self.logger.warning(f"Song did not pass the integrity check!")
 
-    def saved(self):
-        self.logger.success("Song saved!")
+    def saved(self, path: str = ""):
+        if path:
+            self.logger.success(f"Saved: {path}")
+        else:
+            self.logger.success("Song saved!")
 
     def done(self):
         self.logger.success(f"Finished ripping")

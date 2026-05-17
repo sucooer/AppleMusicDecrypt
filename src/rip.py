@@ -79,6 +79,7 @@ class Ripper:
             # Update Logger with metadata
             task.logger.set_fullname(task.metadata.artist, task.metadata.title)
             task.logger.create()
+            task.logger.logger.info("Fetching metadata...")
 
             # Check Language
             if it(Config).region.languageNotExistWarning and not language_exist(url.storefront, flags.language):
@@ -201,10 +202,11 @@ class Ripper:
                             task.logger.failed_integrity(False)
                             task.error = SongNotPassIntegrityCheckException("Integrity Check Warning")
         
+                    task.logger.logger.info("Saving file...")
                     local_filename = await run_sync(save, song_bytes, local_codec, task.metadata, task.playlist)
-                    task.logger.saved()
+                    task.logger.saved(local_filename)
                     task.update_status(Status.DONE)
-        
+
                     if it(Config).download.afterDownloaded:
                         command = it(Config).download.afterDownloaded.format(filename=local_filename)
                         subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -275,10 +277,11 @@ class Ripper:
                     if not await run_sync(check_song_integrity, song_bytes):
                         task.logger.failed_integrity(True)
         
+                    task.logger.logger.info("Saving file...")
                     local_filename = await run_sync(save, song_bytes, Codec.AAC_LEGACY, task.metadata, task.playlist)
-                    task.logger.saved()
+                    task.logger.saved(local_filename)
                     task.update_status(Status.DONE)
-        
+
                     if it(Config).download.afterDownloaded:
                         command = it(Config).download.afterDownloaded.format(filename=local_filename)
                         subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

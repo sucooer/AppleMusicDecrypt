@@ -33,3 +33,29 @@ class WebUIService:
         logs = [*self._current_task.logs, entry][-200:]
         self._current_task = self._current_task.model_copy(update={"logs": logs})
         await self._event_bus.publish("task.log", entry.model_dump())
+
+    async def handle_log_event(self, entry: LogEntry) -> None:
+        await self.append_log(entry)
+        state = self._current_task.state
+        saved_path = self._current_task.saved_path
+        error = self._current_task.error
+
+        if entry.message == "Fetching metadata...":
+            state = "fetching"
+        elif entry.message == "Downloading song...":
+            state = "downloading"
+        elif entry.message == "Decrypting song...":
+            state = "decrypting"
+        elif entry.message == "Saving file...":
+            state = "saving"
+        elif entry.message.startswith("Saved: "):
+            state = "done"
+            saved_path = entry.message.removeprefix("Saved: ")
+        elif entry.level in {"ERROR", "CRITICAL"}:
+            state = "failed"
+            error = entry.message
+
+        self._current_task = self._current_task.model_copy(
+            update={"state": state, "saved_path": saved_path, "error": error}
+        )
+        await self._event_bus.publish("task.state", self._current_task.model_dump())
