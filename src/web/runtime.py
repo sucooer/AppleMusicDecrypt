@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from creart import add_creator, it
 
@@ -10,8 +11,10 @@ from src.config import Config, ConfigCreator
 from src.grpc.manager import WMCreator, WrapperManager
 from src.logger import GlobalLogger, LoggerCreator
 from src.measurer import Measurer, MeasurerCreator
-from src.rip import Ripper
 from src.web.events import EventBus
+
+if TYPE_CHECKING:
+    from src.rip import Ripper
 
 
 @dataclass(slots=True)
@@ -35,11 +38,11 @@ def register_creators() -> None:
 
 
 async def build_runtime() -> WebRuntime:
-    register_creators()
     loop = asyncio.get_running_loop()
     event_bus = EventBus()
     it(WebAPI).init()
     await it(WrapperManager).init(it(Config).instance.url, it(Config).instance.secure)
+    from src.rip import Ripper
     ripper = Ripper()
     asyncio.create_task(
         it(WrapperManager).decrypt_init(

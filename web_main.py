@@ -1,6 +1,22 @@
 import asyncio
 
 import uvicorn
+from creart import add_creator
+
+from src.config import ConfigCreator
+add_creator(ConfigCreator)
+
+from src.logger import LoggerCreator
+add_creator(LoggerCreator)
+
+from src.api import APICreator
+add_creator(APICreator)
+
+from src.grpc.manager import WMCreator
+add_creator(WMCreator)
+
+from src.measurer import MeasurerCreator
+add_creator(MeasurerCreator)
 
 from src.web.app import create_app
 from src.web.runtime import build_runtime
