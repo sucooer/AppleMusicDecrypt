@@ -3,9 +3,9 @@ from typing import Type
 
 from creart import exists_module
 from creart.creator import AbstractCreator, CreateTargetInfo
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-CONFIG_VERSION = "0.0.10"
+CONFIG_VERSION = "0.0.11"
 
 
 class Instance(BaseModel):
@@ -61,6 +61,12 @@ class Metadata(BaseModel):
                                 "record_company", "upc", "isrc", "rtng"]
 
 
+class Notification(BaseModel):
+    enable: bool = False
+    serverChan3SendKey: str = ""
+    tags: str = "AppleMusicDecrypt|下载通知"
+
+
 class Config(BaseModel):
     version: str = "0.0.0"
     region: Region
@@ -68,6 +74,7 @@ class Config(BaseModel):
     localInstance: LocalInstance
     download: Download
     metadata: Metadata
+    notification: Notification = Field(default_factory=Notification)
 
     @classmethod
     def load_from_config(cls, config_file: str = "config.toml"):

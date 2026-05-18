@@ -7,10 +7,11 @@ from src.api import WebAPI
 from src.config import Config
 from src.flags import Flags
 from src.grpc.manager import WrapperManager
-from src.logger import set_log_sink
+from src.logger import GlobalLogger, set_log_sink
 from src.quality import get_available_audio_quality
 from src.url import AppleMusicURL, URLType, Song
 from src.web.events import EventBus
+from src.web.notifications import NullNotifier
 from src.web.schemas import (
     DownloadRequest,
     LogEntry,
@@ -24,12 +25,15 @@ from src.web.schemas import (
 
 
 class WebUIService:
-    def __init__(self, event_bus: EventBus, wrapper_manager, measurer, ripper) -> None:
+    def __init__(self, event_bus: EventBus, wrapper_manager, measurer, ripper, notifier=None) -> None:
         self._event_bus = event_bus
         self._wrapper_manager = wrapper_manager
         self._measurer = measurer
         self._ripper = ripper
+        self._notifier = notifier or NullNotifier()
         self._current_task = TaskSnapshot()
+        self._completion_notified = False
+        self._failure_notified = False
 
     @property
     def wrapper_manager(self):
@@ -44,7 +48,21 @@ class WebUIService:
 
     def replace_current_task(self, snapshot: TaskSnapshot) -> TaskSnapshot:
         self._current_task = snapshot
+        self._completion_notified = False
+        self._failure_notified = False
         return snapshot
+
+    async def _notify_current_task_if_needed(self) -> None:
+        snapshot = self._current_task
+        try:
+            if snapshot.state == "done" and not self._completion_notified:
+                await self._notifier.send_download_complete(snapshot)
+                self._completion_notified = True
+            elif (snapshot.state == "failed" or snapshot.failed_tracks) and not self._failure_notified:
+                await self._notifier.send_download_failed(snapshot)
+                self._failure_notified = True
+        except Exception as exc:
+            it(GlobalLogger).logger.warning(f"Notification failed: {exc}")
 
     def _track_title(self, track) -> str:
         attributes = getattr(track, "attributes", None)
@@ -206,6 +224,7 @@ class WebUIService:
         await self.append_log(entry)
         if self._apply_track_log(entry):
             await self._event_bus.publish("task.state", self._current_task.model_dump())
+            await self._notify_current_task_if_needed()
             return
 
         state = self._current_task.state
@@ -249,6 +268,7 @@ class WebUIService:
             update={"state": state, "detail": detail, "saved_path": saved_path, "error": error}
         )
         await self._event_bus.publish("task.state", self._current_task.model_dump())
+        await self._notify_current_task_if_needed()
 
     async def start_download(self, request: DownloadRequest) -> TaskSnapshot:
         parsed = AppleMusicURL.parse_url(request.url)

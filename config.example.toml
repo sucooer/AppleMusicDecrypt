@@ -1,5 +1,5 @@
 # DO NOT EDIT IT
-version = "0.0.10"
+version = "0.0.11"
 
 [instance]
 url = "127.0.0.1:8080"
@@ -108,6 +108,14 @@ maxBitDepth = 24
 afterDownloaded = ""
 retryTime = 8
 maxWaitTime = 30
+
+[notification]
+# Send ServerChan3 notifications when downloads complete or fail.
+# Get the sendkey from https://sc3.ft07.com/ and keep it private.
+enable = false
+serverChan3SendKey = ""
+# ServerChan3 tags are separated by "|".
+tags = "AppleMusicDecrypt|下载通知"
 
 [metadata]
 # Metadata to be written to the song

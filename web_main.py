@@ -19,6 +19,7 @@ from src.measurer import MeasurerCreator
 add_creator(MeasurerCreator)
 
 from src.web.app import create_app
+from src.web.notifications import ServerChanNotifier
 from src.web.runtime import build_runtime
 from src.web.services import WebUIService
 
@@ -30,6 +31,7 @@ async def main():
         wrapper_manager=runtime.wrapper_manager,
         measurer=runtime.measurer,
         ripper=runtime.ripper,
+        notifier=ServerChanNotifier(runtime.config.notification),
     )
     app = create_app(service=service)
     config = uvicorn.Config(app, host="0.0.0.0", port=9527)
