@@ -99,16 +99,41 @@ Some audio files provided by Apple Music are incorrectly encoded to a higher bit
 
 ## Web UI
 
-Install server dependencies:
-
-```bash
-poetry install --with server,dev
-```
-
 Run the local web UI:
 
 ```bash
 poetry run python web_main.py
 ```
 
-Open `http://127.0.0.1:8000` and use the panel for download, quality lookup, wrapper-manager login/logout, and live logs.
+Open `http://127.0.0.1:9527`.
+
+The Web UI provides:
+
+- Song, album, artist, and playlist download from an Apple Music URL
+- Quality lookup
+- Live task state, download speed, decrypt speed, and logs
+- Album progress display, including total tracks and completed tracks
+- Failed-track list for album downloads
+- Manual retry for failed album tracks
+
+Docker starts the Web UI by default:
+
+```bash
+docker build -t applemusicdecrypt-all .
+docker run -d --name amd-all --restart unless-stopped -p 9527:9527 -v /path/to/downloads:/app/downloads applemusicdecrypt-all
+```
+
+### ServerChan3 Notifications
+
+The Web UI can send ServerChan3 notifications when a download completes, when a task fails, or when a track in an album fails.
+
+Edit `config.toml`:
+
+```toml
+[notification]
+enable = true
+serverChan3SendKey = "your_serverchan3_sendkey"
+tags = "AppleMusicDecrypt|下载通知"
+```
+
+Notification messages include the task name, type, codec, album progress, saved path, failed-track list, and time. The `sendkey` is sensitive; keep it in `config.toml` and do not commit it.
