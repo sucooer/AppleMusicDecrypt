@@ -12,6 +12,17 @@ TaskState = Literal[
     "downloading",
     "decrypting",
     "saving",
+    "retrying",
+    "done",
+    "failed",
+]
+
+TrackState = Literal[
+    "pending",
+    "fetching",
+    "downloading",
+    "decrypting",
+    "saving",
     "done",
     "failed",
 ]
@@ -22,6 +33,9 @@ class LogEntry(BaseModel):
     level: str
     source: Literal["system", "task"]
     message: str
+    item_type: str | None = None
+    item_id: str | None = None
+    item_name: str | None = None
 
 
 class DownloadRequest(BaseModel):
@@ -61,14 +75,29 @@ class LogoutRequest(BaseModel):
     username: str
 
 
+class TrackSnapshot(BaseModel):
+    id: str
+    title: str
+    state: TrackState = "pending"
+    error: str | None = None
+
+
 class TaskSnapshot(BaseModel):
     state: TaskState = "idle"
     url: str | None = None
+    task_type: str | None = None
+    storefront: str | None = None
     title: str | None = None
     detail: str | None = None
     codec: str | None = None
+    language: str | None = None
+    force: bool = False
     saved_path: str | None = None
     error: str | None = None
+    total_tracks: int = 0
+    completed_tracks: int = 0
+    failed_tracks: list[dict[str, str]] = Field(default_factory=list)
+    tracks: list[TrackSnapshot] = Field(default_factory=list)
     logs: list[LogEntry] = Field(default_factory=list)
 
 

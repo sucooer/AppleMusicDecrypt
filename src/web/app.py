@@ -49,6 +49,14 @@ def create_app(service: WebUIService) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return snapshot.model_dump()
 
+    @app.post("/api/task/retry-failed")
+    async def retry_failed_tracks():
+        try:
+            snapshot = await service.retry_failed_tracks()
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return snapshot.model_dump()
+
     @app.post("/api/task/quality")
     async def quality_lookup(payload: QualityRequest):
         try:

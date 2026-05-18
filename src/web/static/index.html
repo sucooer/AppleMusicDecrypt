@@ -53,9 +53,17 @@
         <dl>
           <div><dt>状态</dt><dd id="task-state">idle</dd></div>
           <div><dt>详情</dt><dd id="task-detail">-</dd></div>
+          <div><dt>专辑进度</dt><dd id="album-progress">-</dd></div>
           <div><dt>保存路径</dt><dd id="saved-path">-</dd></div>
           <div><dt>错误</dt><dd id="task-error">-</dd></div>
         </dl>
+        <div id="failed-panel" class="failed-panel" hidden>
+          <div class="failed-header">
+            <strong>失败歌曲</strong>
+            <button id="retry-failed-btn" class="secondary" type="button">重试失败歌曲</button>
+          </div>
+          <ul id="failed-tracks" class="failed-tracks"></ul>
+        </div>
       </section>
       <section class="quality-panel fill-panel">
         <h2>音质结果</h2>

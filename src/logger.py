@@ -21,17 +21,18 @@ def _emit_to_console(message):
     print_formatted_text(ANSI(message), end="")
 
 
-def _emit_to_sink(source: str, record):
+def _emit_to_sink(source: str, record, context: dict | None = None):
     if ACTIVE_LOG_SINK is None:
         return
-    ACTIVE_LOG_SINK(
-        {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "level": record["level"].name,
-            "source": source,
-            "message": record["message"],
-        }
-    )
+    payload = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "level": record["level"].name,
+        "source": source,
+        "message": record["message"],
+    }
+    if context:
+        payload.update(context)
+    ACTIVE_LOG_SINK(payload)
 
 
 class GlobalLogger:
@@ -65,6 +66,7 @@ class RipLogger:
     def __init__(self, _type: str, item_id: str):
         self.item_type = _type
         self.item_id = urllib.parse.quote(item_id)
+        self.full_name = self.item_id
         logger.remove()
         self.logger = copy.deepcopy(logger)
         self.logger.add(lambda msg: _emit_to_console(msg), colorize=True,
@@ -74,7 +76,18 @@ class RipLogger:
                                + " | <level>{level}</level>"
                                + " - <level>{message}</level>",
                         level="INFO")
-        self.logger.add(lambda msg: _emit_to_sink("task", msg.record), format="{message}", level="INFO")
+        self.logger.add(
+            lambda msg: _emit_to_sink("task", msg.record, self._sink_context()),
+            format="{message}",
+            level="INFO",
+        )
+
+    def _sink_context(self):
+        return {
+            "item_type": str(self.item_type),
+            "item_id": self.item_id,
+            "item_name": self.full_name,
+        }
 
     def create(self):
         self.logger.info("Start ripping...")
@@ -93,7 +106,11 @@ class RipLogger:
                                + " | <level>{level}</level>"
                                + " - <level>{message}</level>",
                         level="INFO")
-        self.logger.add(lambda msg: _emit_to_sink("task", msg.record), format="{message}", level="INFO")
+        self.logger.add(
+            lambda msg: _emit_to_sink("task", msg.record, self._sink_context()),
+            format="{message}",
+            level="INFO",
+        )
 
     def not_exist(self):
         self.logger.error(

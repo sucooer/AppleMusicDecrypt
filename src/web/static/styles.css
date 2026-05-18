@@ -198,6 +198,11 @@ button.secondary:hover {
   background: #e2e8ee;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .notice {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -287,6 +292,61 @@ dd {
   margin: 0;
   overflow-wrap: anywhere;
   font-size: 0.9rem;
+}
+
+.failed-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.failed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.failed-header strong {
+  font-size: 0.9rem;
+}
+
+.failed-header button {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+
+.failed-tracks {
+  display: grid;
+  gap: 7px;
+  max-height: 18dvh;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.failed-tracks li {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(180, 35, 24, 0.18);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: var(--danger-soft);
+}
+
+.failed-tracks strong {
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.failed-tracks span {
+  color: var(--danger);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 pre {
