@@ -49,4 +49,7 @@ RUN set -eux; \
     export PATH="/root/.local/bin:$PATH"; \
     poetry install;
 
-CMD ["poetry", "run", "python", "main.py"]
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+CMD ["/app/entrypoint.sh"]

@@ -7,6 +7,7 @@ from src.api import WebAPI
 from src.config import Config
 from src.flags import Flags
 from src.grpc.manager import WrapperManager
+from src.logger import set_log_sink
 from src.quality import get_available_audio_quality
 from src.url import AppleMusicURL, URLType
 from src.web.events import EventBus
@@ -36,6 +37,31 @@ class WebUIService:
         self._current_task = snapshot
         return snapshot
 
+    def attach_log_sink(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
+        target_loop = loop or asyncio.get_running_loop()
+
+        def sink(payload: dict) -> None:
+            entry = LogEntry.model_validate(payload)
+
+            try:
+                running_loop = asyncio.get_running_loop()
+            except RuntimeError:
+                running_loop = None
+
+            if running_loop is target_loop:
+                asyncio.create_task(self.handle_log_event(entry))
+                return
+
+            def schedule() -> None:
+                asyncio.create_task(self.handle_log_event(entry))
+
+            target_loop.call_soon_threadsafe(schedule)
+
+        set_log_sink(sink)
+
+    def detach_log_sink(self) -> None:
+        set_log_sink(None)
+
     async def system_status(self) -> SystemStatusResponse:
         status = await self._wrapper_manager.status()
         return SystemStatusResponse(
@@ -46,6 +72,15 @@ class WebUIService:
             active_tasks=self._measurer.tasks_count(),
         )
 
+    async def publish_system_status(self) -> None:
+        status = await self.system_status()
+        await self._event_bus.publish("system.status", status.model_dump())
+
+    async def publish_system_status_loop(self, interval: float = 1.0) -> None:
+        while True:
+            await self.publish_system_status()
+            await asyncio.sleep(interval)
+
     async def append_log(self, entry: LogEntry) -> None:
         logs = [*self._current_task.logs, entry][-200:]
         self._current_task = self._current_task.model_copy(update={"logs": logs})
@@ -54,26 +89,39 @@ class WebUIService:
     async def handle_log_event(self, entry: LogEntry) -> None:
         await self.append_log(entry)
         state = self._current_task.state
+        detail = self._current_task.detail
         saved_path = self._current_task.saved_path
         error = self._current_task.error
 
         if entry.message == "Fetching metadata...":
             state = "fetching"
+            detail = entry.message
         elif entry.message == "Downloading song...":
             state = "downloading"
+            detail = entry.message
         elif entry.message == "Decrypting song...":
             state = "decrypting"
+            detail = entry.message
         elif entry.message == "Saving file...":
             state = "saving"
+            detail = entry.message
         elif entry.message.startswith("Saved: "):
             state = "done"
+            detail = "Saved"
             saved_path = entry.message.removeprefix("Saved: ")
+        elif entry.message == "Song already exists":
+            state = "done"
+            detail = entry.message
+        elif entry.message == "Finished ripping":
+            state = "done"
+            detail = entry.message
         elif entry.level in {"ERROR", "CRITICAL"}:
             state = "failed"
+            detail = entry.message
             error = entry.message
 
         self._current_task = self._current_task.model_copy(
-            update={"state": state, "saved_path": saved_path, "error": error}
+            update={"state": state, "detail": detail, "saved_path": saved_path, "error": error}
         )
         await self._event_bus.publish("task.state", self._current_task.model_dump())
 
@@ -86,7 +134,7 @@ class WebUIService:
             state="starting",
             url=request.url,
             codec=request.codec,
-            detail=f"Preparing {parsed.type.value} task",
+            detail=f"Preparing {parsed.type} task",
         )
         self.replace_current_task(snapshot)
         await self._event_bus.publish("task.state", snapshot.model_dump())

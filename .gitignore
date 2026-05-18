@@ -164,3 +164,42 @@ config.toml
 .python-version
 .vscode/*
 /extras/telegram_bot/bot_database.db
+
+# Local agent / planning artifacts
+.superpowers/
+docs/superpowers/
+
+# Local runtime output
+/downloads/
+/output/
+/logs/
+*.log
+
+# Test and browser automation artifacts
+/tests/
+/test-results/
+/playwright-report/
+/blob-report/
+/coverage/
+junit.xml
+
+# Local secrets and account/session material
+.env.*
+!.env.example
+*.local
+*.secret
+*.secrets
+*secret*
+*token*
+*cookie*
+*credentials*
+*.pem
+*.key
+*.p8
+*.p12
+*.crt
+*.cer
+*.der
+*.wvd
+*.sqlite
+*.sqlite3

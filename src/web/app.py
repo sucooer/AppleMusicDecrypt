@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -17,7 +18,19 @@ STATIC_DIR = Path(__file__).with_name("static")
 
 
 def create_app(service: WebUIService) -> FastAPI:
-    app = FastAPI(title="AppleMusicDecrypt Web UI")
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        service.attach_log_sink(asyncio.get_running_loop())
+        status_task = asyncio.create_task(service.publish_system_status_loop())
+        try:
+            yield
+        finally:
+            status_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await status_task
+            service.detach_log_sink()
+
+    app = FastAPI(title="AppleMusicDecrypt Web UI", lifespan=lifespan)
     auth = WebAuthService(service.wrapper_manager)
 
     @app.get("/api/system/status")

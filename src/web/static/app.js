@@ -3,7 +3,9 @@ const stateEls = {
   codec: document.querySelector('#codec'),
   language: document.querySelector('#language'),
   force: document.querySelector('#force'),
+  notice: document.querySelector('#notice'),
   taskState: document.querySelector('#task-state'),
+  taskDetail: document.querySelector('#task-detail'),
   savedPath: document.querySelector('#saved-path'),
   taskError: document.querySelector('#task-error'),
   wmReady: document.querySelector('#wm-ready'),
@@ -15,6 +17,14 @@ const stateEls = {
   logOutput: document.querySelector('#log-output'),
 };
 
+let lastTaskState = 'idle';
+
+function showNotice(message, type = 'info') {
+  stateEls.notice.textContent = message;
+  stateEls.notice.className = `notice ${type}`;
+  stateEls.notice.hidden = false;
+}
+
 function appendLog(line) {
   const row = document.createElement('div');
   row.textContent = `[${line.timestamp}] ${line.source.toUpperCase()} ${line.level}: ${line.message}`;
@@ -22,9 +32,19 @@ function appendLog(line) {
 }
 
 function renderTask(snapshot) {
+  const nextState = snapshot.state || 'idle';
   stateEls.taskState.textContent = snapshot.state || 'idle';
+  stateEls.taskDetail.textContent = snapshot.detail || snapshot.url || '-';
   stateEls.savedPath.textContent = snapshot.saved_path || '-';
   stateEls.taskError.textContent = snapshot.error || '-';
+
+  if (nextState === 'done' && lastTaskState !== 'done') {
+    showNotice(`下载完成：${snapshot.saved_path || '文件已保存'}`, 'success');
+  } else if (nextState === 'failed' && lastTaskState !== 'failed') {
+    showNotice(`下载失败：${snapshot.error || '请查看实时日志'}`, 'error');
+  }
+
+  lastTaskState = nextState;
 }
 
 function renderSystem(status) {
@@ -41,7 +61,12 @@ async function postJSON(url, payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(`请求失败 (${response.status})`);
+  }
   if (!response.ok) throw new Error(data.detail || data.message || 'Request failed');
   return data;
 }
@@ -58,6 +83,7 @@ async function startDownload() {
     language: stateEls.language.value,
     force: stateEls.force.checked,
   });
+  showNotice('下载任务已提交', 'info');
   renderTask(data);
 }
 
@@ -66,28 +92,9 @@ async function lookupQuality() {
   stateEls.qualityOutput.textContent = JSON.stringify(data.items, null, 2);
 }
 
-async function login() {
-  const username = window.prompt('Apple ID username');
-  if (!username) return;
-  const password = window.prompt('Password');
-  const result = await postJSON('/api/auth/login', { username, password });
-  appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'INFO', message: result.message });
-  await refreshStatus();
-}
-
-async function logout() {
-  const username = window.prompt('Apple ID username');
-  if (!username) return;
-  const result = await postJSON('/api/auth/logout', { username });
-  appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'INFO', message: result.message });
-  await refreshStatus();
-}
-
 function attachEvents() {
   document.querySelector('#download-btn').addEventListener('click', () => startDownload().catch((error) => appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'ERROR', message: error.message })));
   document.querySelector('#quality-btn').addEventListener('click', () => lookupQuality().catch((error) => appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'ERROR', message: error.message })));
-  document.querySelector('#login-btn').addEventListener('click', () => login().catch((error) => appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'ERROR', message: error.message })));
-  document.querySelector('#logout-btn').addEventListener('click', () => logout().catch((error) => appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'ERROR', message: error.message })));
 }
 
 function connectEvents() {
