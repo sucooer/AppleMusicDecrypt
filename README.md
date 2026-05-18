@@ -23,6 +23,8 @@ dl https://music.apple.com/jp/artist/%E3%83%88%E3%82%B2%E3%83%8A%E3%82%B7%E3%83%
 dl --include-participate-songs https://music.apple.com/jp/artist/%E3%83%88%E3%82%B2%E3%83%8A%E3%82%B7%E3%83%88%E3%82%B2%E3%82%A2%E3%83%AA/1688539273
 # Download all songs of specified playlist
 dl https://music.apple.com/jp/playlist/bocchi-the-rock/pl.u-Ympg5s39LRqp
+# Download a music video, requires [musicVideo].mediaUserToken in config.toml
+dl https://music.apple.com/us/music-video/example/1234567890
 # Download multiple songs with the same options, without retyping the command
 dl -c aac -l en-US -b
 https://music.apple.com/jp/playlist/bocchi-the-rock/pl.u-Ympg5s39LRqp
@@ -56,6 +58,7 @@ qa --invert --codec-id https://music.apple.com/jp/playlist/bocchi-the-rock/pl.u-
 - Apple Music Song Link (https://music.apple.com/jp/song/caribbean-blue/339592231)
 - Apple Music Artist Link (https://music.apple.com/jp/artist/%E3%82%A8%E3%83%B3%E3%83%A4/160847)
 - Apple Music Playlist Link (https://music.apple.com/jp/playlist/bocchi-the-rock/pl.u-Ympg5s39LRqp)
+- Apple Music MV Link (https://music.apple.com/us/music-video/example/1234567890)
 
 # About V2
 AppleMusicDecrypt v2 provides support for remote fast decryption through [WorldObservationLog/wrapper](https://github.com/WorldObservationLog/wrapper) and [WorldObservationLog/wrapper-manager](https://github.com/WorldObservationLog/wrapper-manager)
@@ -109,12 +112,28 @@ Open `http://127.0.0.1:9527`.
 
 The Web UI provides:
 
-- Song, album, artist, and playlist download from an Apple Music URL
+- Song, album, artist, playlist, and MV download from an Apple Music URL
 - Quality lookup
 - Live task state, download speed, decrypt speed, and logs
 - Album progress display, including total tracks and completed tracks
 - Failed-track list for album downloads
 - Manual retry for failed album tracks
+
+MV download requires a valid Apple Music `media-user-token` in `config.toml`:
+
+How to get `media-user-token`:
+
+1. Open Apple Music in your browser and sign in.
+2. Open Developer Tools.
+3. Go to `Application -> Storage -> Cookies -> https://music.apple.com`.
+4. Find the Cookie named `media-user-token` and copy its value.
+
+```toml
+[musicVideo]
+mediaUserToken = "your_media_user_token"
+maxHeight = 2160
+audioType = "auto"
+```
 
 Docker starts the Web UI by default:
 

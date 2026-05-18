@@ -19,6 +19,11 @@ class WidevineDecrypt:
         challenge = self.cdm.get_license_challenge(self.session_id, pssh)
         return base64.standard_b64encode(challenge).decode()
 
+    def generate_challenge_from_pssh(self, pssh_data: str):
+        pssh = PSSH(pssh_data)
+        challenge = self.cdm.get_license_challenge(self.session_id, pssh)
+        return base64.standard_b64encode(challenge).decode()
+
     def generate_key(self, license: str):
         self.cdm.parse_license(self.session_id, license)
         return self.cdm.get_keys(self.session_id)

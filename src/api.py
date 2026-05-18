@@ -161,6 +161,64 @@ class WebAPI:
                 return data
         return None
 
+    async def get_music_video_info(self, music_video_id: str, storefront: str, lang: str):
+        req = await self._request(
+            "GET",
+            f"https://amp-api.music.apple.com/v1/catalog/{storefront}/music-videos/{music_video_id}",
+            params={"include": "albums,artists", "l": lang},
+        )
+        music_video_obj = MusicVideoData.model_validate(req.json())
+        for data in music_video_obj.data:
+            if data.id == music_video_id:
+                return data
+        return None
+
+    async def get_music_video_web_playback(self, adam_id: str, media_user_token: str) -> str:
+        resp = await self._request(
+            "POST",
+            "https://play.music.apple.com/WebObjects/MZPlay.woa/wa/webPlayback",
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json",
+                "Origin": "https://music.apple.com",
+                "Referer": "https://music.apple.com/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "x-apple-music-user-token": media_user_token,
+            },
+            json={"salableAdamId": adam_id},
+        )
+        data = resp.json()
+        song_list = data.get("songList") or []
+        if not song_list or not song_list[0].get("hls-playlist-url"):
+            raise ValueError("无法获取 MV 播放列表，请检查 mediaUserToken 是否有效")
+        return song_list[0]["hls-playlist-url"]
+
+    async def acquire_web_playback_license(
+            self, adam_id: str, challenge: str, uri: str, media_user_token: str) -> str:
+        resp = await self._request(
+            "POST",
+            "https://play.itunes.apple.com/WebObjects/MZPlay.woa/wa/acquireWebPlaybackLicense",
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json",
+                "Origin": "https://music.apple.com",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "x-apple-music-user-token": media_user_token,
+            },
+            json={
+                "challenge": challenge,
+                "key-system": "com.widevine.alpha",
+                "uri": uri,
+                "adamId": adam_id,
+                "isLibrary": False,
+                "user-initiated": True,
+            },
+        )
+        data = resp.json()
+        if data.get("errorCode", 0) != 0 or data.get("status", 0) != 0 or not data.get("license"):
+            raise ValueError(f"MV 授权失败: {data}")
+        return data["license"]
+
     async def song_exist(self, song_id: str, storefront: str):
         req = await self._request("HEAD", f"https://amp-api.music.apple.com/v1/catalog/{storefront}/songs/{song_id}")
         if req.status_code == 200:

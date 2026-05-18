@@ -172,6 +172,9 @@ class InteractiveShell:
                 case URLType.Playlist:
                     safely_create_task(
                         self.ripper.rip_playlist(url, codec, Flags(force_save=force_download, language=language)))
+                case URLType.MusicVideo:
+                    safely_create_task(
+                        self.ripper.rip_music_video(url, Flags(force_save=force_download, language=language)))
                 case _:
                     it(GlobalLogger).logger.error(f"Unsupported URLType - {raw_url}")
                     continue

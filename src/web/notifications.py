@@ -43,6 +43,7 @@ class ServerChanNotifier:
             "album": "专辑",
             "playlist": "歌单",
             "artist": "艺人",
+            "music-video": "MV",
         }
         return task_types.get(snapshot.task_type or "", snapshot.task_type or "任务")
 

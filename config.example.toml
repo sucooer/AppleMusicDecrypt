@@ -109,6 +109,23 @@ afterDownloaded = ""
 retryTime = 8
 maxWaitTime = 30
 
+[musicVideo]
+# 下载 MV 必须配置 Apple Music media-user-token，获取方式可参考上游项目文档
+# 请勿公开此值，建议只写入本地 config.toml
+mediaUserToken = ""
+# MV 视频最高分辨率高度；2160 表示最高选择 4K，1080 表示最高选择 1080p
+maxHeight = 2160
+# MV 音频类型：auto 优先 Atmos，其次 AC3，最后 AAC；也可设置为 atmos、ac3、aac
+audioType = "auto"
+# MV 保存目录格式，默认与音乐保存目录保持一致
+# 可用值: adam_id, title, artist, album, album_artist, genre, created, isrc, tracknum, disk, rtng
+dirPathFormat = "downloads/{album_artist}/{album}"
+# MV 文件名格式
+# 可用值同 dirPathFormat
+fileNameFormat = "{artist} - {title}"
+# MV 分片并发下载数量
+segmentParallelNum = 10
+
 [notification]
 # 下载完成、出现错误或失败时发送 Server酱³ 通知
 # 在 https://sc3.ft07.com/ 获取 sendkey，请妥善保管，不要公开

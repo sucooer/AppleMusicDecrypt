@@ -121,11 +121,19 @@ class WebUIService:
             return "fetching"
         if entry.message == "Downloading song...":
             return "downloading"
+        if entry.message.startswith("Downloading MV"):
+            return "downloading"
         if entry.message == "Decrypting song...":
+            return "decrypting"
+        if entry.message.startswith("Decrypting MV"):
             return "decrypting"
         if entry.message == "Saving file...":
             return "saving"
+        if entry.message == "Remuxing MV...":
+            return "saving"
         if entry.message.startswith("Saved: ") or entry.message == "Song already exists":
+            return "done"
+        if entry.message == "MV already exists":
             return "done"
         if entry.level in {"ERROR", "CRITICAL"}:
             return "failed"
@@ -238,8 +246,22 @@ class WebUIService:
         elif entry.message == "Downloading song...":
             state = "downloading"
             detail = entry.message
+        elif entry.message.startswith("Downloading MV"):
+            state = "downloading"
+            detail = entry.message
         elif entry.message == "Decrypting song...":
             state = "decrypting"
+            detail = entry.message
+        elif entry.message.startswith("Decrypting MV"):
+            state = "decrypting"
+            detail = entry.message
+        elif entry.message == "Getting MV playlist...":
+            state = "fetching"
+            detail = entry.message
+        elif entry.message.startswith("Selected MV"):
+            detail = entry.message
+        elif entry.message == "Remuxing MV...":
+            state = "saving"
             detail = entry.message
         elif entry.message == "Saving file...":
             state = "saving"
@@ -249,6 +271,9 @@ class WebUIService:
             detail = "Saved"
             saved_path = entry.message.removeprefix("Saved: ")
         elif entry.message == "Song already exists":
+            state = "done"
+            detail = entry.message
+        elif entry.message == "MV already exists":
             state = "done"
             detail = entry.message
         elif entry.message == "Finished ripping":
@@ -282,6 +307,10 @@ class WebUIService:
             album_data = album.data[0]
             tracks = self._album_track_snapshots(album)
             title = self._track_title(album_data)
+        elif parsed.type == URLType.MusicVideo:
+            music_video = await it(WebAPI).get_music_video_info(parsed.id, parsed.storefront, request.language)
+            if music_video:
+                title = self._track_title(music_video)
 
         snapshot = TaskSnapshot(
             state="starting",
@@ -318,6 +347,8 @@ class WebUIService:
             asyncio.create_task(_run_with_error_handling(self._ripper.rip_artist(parsed, request.codec, flags)))
         elif parsed.type == URLType.Playlist:
             asyncio.create_task(_run_with_error_handling(self._ripper.rip_playlist(parsed, request.codec, flags)))
+        elif parsed.type == URLType.MusicVideo:
+            asyncio.create_task(_run_with_error_handling(self._ripper.rip_music_video(parsed, flags)))
         else:
             raise ValueError(f"Unsupported URLType: {parsed.type}")
 

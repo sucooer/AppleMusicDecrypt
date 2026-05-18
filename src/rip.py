@@ -16,13 +16,14 @@ from src.legacy.mp4 import extract_media as legacy_extract_media
 from src.logger import RipLogger
 from src.measurer import Measurer
 from src.metadata import SongMetadata
+from src.music_video import MusicVideoMetadata, save_music_video
 from src.models import PlaylistInfo
 from src.mp4 import extract_media, extract_song, encapsulate, write_metadata, fix_encapsulate, fix_esds_box, \
     check_song_integrity
 from src.save import save
 from src.task import Task, Status
 from src.types import Codec, ParentDoneHandler
-from src.url import Song, Album, URLType, Playlist
+from src.url import Song, Album, URLType, Playlist, MusicVideo
 from src.utils import get_codec_from_codec_id, check_song_existence, check_song_exists, if_raw_atmos, \
     check_album_existence, playlist_write_song_index, run_sync, safely_create_task, language_exist, query_language
 
@@ -359,6 +360,60 @@ class Ripper:
         for track in playlist_info.data[0].relationships.tracks.data:
             song = Song(id=track.id, storefront=url.storefront, url="", type=URLType.Song)
             safely_create_task(self.rip_song(song, codec, flags, done_handler, playlist=playlist_info))
+
+    async def rip_music_video(self, url: MusicVideo, flags: Flags = Flags()):
+        if self.download_manager.get_task(url.id):
+            return
+
+        task = Task(adamId=url.id)
+        task.logger = RipLogger(URLType.MusicVideo, task.adamId)
+
+        try:
+            await self.download_manager.register_task(task)
+            media_user_token = it(Config).musicVideo.mediaUserToken.strip()
+            if not media_user_token:
+                raise ValueError("请先在 config.toml 的 [musicVideo].mediaUserToken 配置 Apple Music media-user-token")
+
+            task.logger.create()
+            task.logger.logger.info("Fetching metadata...")
+            raw_metadata = await it(WebAPI).get_music_video_info(task.adamId, url.storefront, flags.language)
+            if not raw_metadata:
+                task.logger.not_exist()
+                task.update_status(Status.FAILED)
+                task.error = Exception("Music video not found on Apple Music")
+                return
+
+            metadata = MusicVideoMetadata.parse(task.adamId, raw_metadata)
+            task.logger.set_fullname(metadata.artist, metadata.title)
+            task.metadata = metadata
+
+            task.logger.logger.info("Getting MV playlist...")
+            master_m3u8_url = await it(WebAPI).get_music_video_web_playback(task.adamId, media_user_token)
+
+            task.update_status(Status.DOWNLOADING)
+            local_filename = await save_music_video(
+                task.adamId,
+                master_m3u8_url,
+                metadata,
+                task.logger,
+                media_user_token,
+            )
+            task.logger.logger.info("Saving file...")
+            task.logger.saved(str(local_filename))
+            task.update_status(Status.DONE)
+
+            if it(Config).download.afterDownloaded:
+                command = it(Config).download.afterDownloaded.format(filename=local_filename)
+                subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        except Exception as e:
+            task.logger.logger.exception(f"Error processing music video: {e}")
+            task.update_status(Status.FAILED)
+            task.error = e
+            raise
+        finally:
+            await self.download_manager.unregister_task(task)
+            task.update_status(task.status)
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     async def decrypt_sample_with_retry(self, adam_id: str, key: str, sample: bytes, sample_index: int):

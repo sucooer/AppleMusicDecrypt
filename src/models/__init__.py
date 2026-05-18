@@ -8,3 +8,4 @@ from src.models.plsylist_tracks import PlaylistTracks
 from src.models.song_data import SongData
 from src.models.song_lyrics import SongLyrics
 from src.models.tracks_meta import TracksMeta
+from src.models.music_video import MusicVideoData

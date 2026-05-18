@@ -55,6 +55,15 @@ class Download(BaseModel):
     maxWaitTime: int = 30
 
 
+class MusicVideo(BaseModel):
+    mediaUserToken: str = ""
+    maxHeight: int = 2160
+    audioType: str = "auto"
+    dirPathFormat: str = "downloads/{album_artist}/{album}"
+    fileNameFormat: str = "{artist} - {title}"
+    segmentParallelNum: int = 10
+
+
 class Metadata(BaseModel):
     embedMetadata: list[str] = ["title", "artist", "album", "album_artist", "composer", "album_created",
                                 "genre", "created", "track", "tracknum", "disk", "lyrics", "cover", "copyright",
@@ -73,6 +82,7 @@ class Config(BaseModel):
     instance: Instance
     localInstance: LocalInstance
     download: Download
+    musicVideo: MusicVideo = Field(default_factory=MusicVideo)
     metadata: Metadata
     notification: Notification = Field(default_factory=Notification)
 

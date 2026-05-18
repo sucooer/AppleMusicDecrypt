@@ -1,0 +1,9 @@
+config.toml
+.git
+.venv
+__pycache__/
+*.pyc
+downloads/
+logs/
+tests/
+.pytest_cache/
