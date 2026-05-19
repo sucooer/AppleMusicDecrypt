@@ -200,6 +200,52 @@ pre {
   box-shadow: var(--shadow-sm);
 }
 
+.panel.lggc,
+.hero-card.lggc,
+.task-column.lggc,
+.log-column.lggc,
+.site-footer.lggc {
+  --lggc-radius: 28px;
+  --lggc-bg: rgba(255, 255, 255, 0.2);
+  --lggc-border: rgba(255, 255, 255, 0.46);
+  --lggc-blur: 14px;
+}
+
+.hero-card.lggc,
+.task-column.lggc,
+.log-column.lggc {
+  display: grid;
+  align-items: stretch;
+  justify-content: stretch;
+  justify-items: stretch;
+  width: 100%;
+}
+
+.site-footer.lggc {
+  display: flex;
+}
+
+.status-card.lggc,
+.detail-card.lggc {
+  --lggc-radius: 22px;
+  --lggc-bg: rgba(255, 255, 255, 0.34);
+  --lggc-border: rgba(255, 255, 255, 0.42);
+  --lggc-blur: 10px;
+  display: block;
+}
+
+.lggc::before {
+  border-color: rgba(255, 255, 255, 0.3);
+  opacity: 0.54;
+}
+
+.lggc::after {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.5), transparent 38%),
+    radial-gradient(circle at 24% 18%, rgba(255, 255, 255, 0.42), transparent 28%);
+  opacity: 0.62;
+}
+
 .hero-card.panel.control-column {
   width: 100%;
   align-self: start;
@@ -732,6 +778,7 @@ pre {
 .log-panel {
   grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
+  width: 100%;
   height: 100%;
   padding: 0;
   border: 0;
@@ -752,6 +799,9 @@ pre {
 }
 
 #log-output {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   height: auto;
   padding: 12px;
   border-radius: 22px;

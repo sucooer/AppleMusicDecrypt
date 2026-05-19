@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AppleMusicDecrypt Web UI</title>
-  <link rel="stylesheet" href="/static/styles.css?v=footer-metrics-20260519">
+  <link rel="stylesheet" href="/static/lggc.css?v=local-20260519">
+  <link rel="stylesheet" href="/static/styles.css?v=lggc-glass-20260519">
 </head>
 <body>
   <main class="workbench page-shell">
@@ -33,7 +34,7 @@
       </div>
 
       <section class="panel control-column">
-        <div class="hero-card panel control-column">
+        <div class="hero-card panel control-column lggc">
           <div id="wrapper-banner" class="system-banner" hidden></div>
 
           <div class="form-stack">
@@ -51,37 +52,37 @@
       </section>
     </section>
 
-    <section class="panel task-column">
+    <section class="panel task-column lggc">
       <div class="status-cards">
-        <article class="status-card accent">
+        <article class="status-card accent lggc">
           <span>状态</span>
           <strong id="task-state">当前没有活动任务</strong>
         </article>
-        <article class="status-card">
+        <article class="status-card lggc">
           <span>下载速度</span>
           <strong id="download-speed">0.00 kB/s</strong>
         </article>
-        <article class="status-card">
+        <article class="status-card lggc">
           <span>解密速度</span>
           <strong id="decrypt-speed">0.00 kB/s</strong>
         </article>
-        <article class="status-card">
+        <article class="status-card lggc">
           <span>活跃任务</span>
           <strong id="active-tasks">0</strong>
         </article>
-        <article class="status-card">
+        <article class="status-card lggc">
           <span>详情</span>
           <strong id="task-detail">等待新的下载任务</strong>
         </article>
-        <article class="status-card">
+        <article class="status-card lggc">
           <span>专辑进度</span>
           <strong id="album-progress">-</strong>
         </article>
-        <article class="status-card">
+        <article class="status-card lggc">
           <span>Wrapper</span>
           <strong id="wm-ready">unknown</strong>
         </article>
-        <article class="status-card">
+        <article class="status-card lggc">
           <span>区域</span>
           <strong id="wm-regions">-</strong>
         </article>
@@ -89,11 +90,11 @@
 
       <section class="summary-card task-panel">
         <div class="task-summary-grid">
-        <article class="status-card detail-card saved-path-card">
+        <article class="status-card detail-card saved-path-card lggc">
           <span>保存路径</span>
           <strong id="saved-path">下载完成后会显示</strong>
         </article>
-        <article id="failed-panel" class="status-card detail-card failed-panel">
+        <article id="failed-panel" class="status-card detail-card failed-panel lggc">
           <div class="failed-header">
             <span>失败歌曲</span>
             <button id="retry-failed-btn" class="secondary" type="button">重试失败歌曲</button>
@@ -104,14 +105,14 @@
       </section>
     </section>
 
-    <section class="panel log-column">
+    <section class="panel log-column lggc">
       <section class="log-panel">
         <h2 class="log-title">实时日志</h2>
         <div id="log-output" class="scroll-region"></div>
       </section>
     </section>
 
-    <footer class="site-footer" aria-label="运行信息">
+    <footer class="site-footer lggc" aria-label="运行信息">
       <span id="footer-emoji" class="footer-emoji" aria-hidden="true">🎵</span>
       <div class="footer-metrics">
         <span>加载 <strong id="page-load-time">计算中</strong></span>
