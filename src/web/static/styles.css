@@ -246,16 +246,42 @@ pre {
   opacity: 0.62;
 }
 
+.task-column.lggc::before {
+  display: none;
+}
+
+.task-column.lggc::after {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.32), transparent 42%);
+  opacity: 0.34;
+}
+
+.hero-card.panel.control-column,
+.task-column.lggc,
+.log-column.lggc {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 247, 250, 0.16)),
+    rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset 1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.82),
+    inset -1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.68),
+    0 20px 48px rgba(122, 48, 78, 0.1);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+
+.task-column.lggc {
+  box-shadow:
+    inset 1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.76),
+    inset -1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.62);
+}
+
 .hero-card.panel.control-column {
   width: 100%;
   align-self: start;
   min-height: 0;
   padding: 14px;
   gap: 10px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 250, 0.76));
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(8px);
 }
 
 .task-column,
@@ -575,12 +601,6 @@ button:disabled {
   background: rgba(255, 255, 255, 0.64);
 }
 
-.status-card.accent {
-  background:
-    linear-gradient(180deg, rgba(225, 29, 72, 0.14), rgba(255, 255, 255, 0.72));
-  border-color: rgba(225, 29, 72, 0.14);
-}
-
 .status-card span {
   display: block;
   color: var(--muted);
@@ -602,7 +622,7 @@ button:disabled {
 }
 
 .summary-card {
-  background: rgba(255, 255, 255, 0.78);
+  background: transparent;
   overflow: hidden;
   height: 100%;
   min-width: 0;
@@ -632,6 +652,26 @@ button:disabled {
   overflow: hidden;
   padding: 12px 14px;
   background: rgba(255, 255, 255, 0.62);
+}
+
+.task-column .status-card.lggc,
+.task-column .detail-card.lggc {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.46), rgba(255, 247, 250, 0.24)),
+    rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.58);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.52),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+}
+
+.task-column .status-card.lggc::before,
+.task-column .status-card.lggc::after,
+.task-column .detail-card.lggc::before,
+.task-column .detail-card.lggc::after {
+  display: none;
 }
 
 .detail-card strong {
@@ -871,14 +911,10 @@ pre {
   }
 
   .task-column {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(245, 250, 255, 0.76)),
-      linear-gradient(135deg, rgba(244, 114, 182, 0.12), rgba(125, 211, 252, 0.16));
     overflow: visible;
   }
 
   .summary-card {
-    background: rgba(255, 255, 255, 0.52);
     height: auto;
   }
 
