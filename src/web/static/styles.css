@@ -54,11 +54,11 @@ pre {
 
 .workbench {
   display: grid;
-  grid-template-columns: minmax(420px, 0.92fr) minmax(520px, 1.08fr);
-  grid-template-rows: 320px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(420px, 0.9fr) minmax(520px, 1.1fr);
+  grid-template-rows: minmax(320px, 0.95fr) minmax(260px, 1.05fr) auto;
   grid-template-areas:
-    "hero log"
-    "task log"
+    "hero task"
+    "log log"
     "footer footer";
   gap: 18px;
   height: 100dvh;
@@ -280,8 +280,8 @@ pre {
   width: 100%;
   align-self: start;
   min-height: 0;
-  padding: 14px;
-  gap: 10px;
+  padding: 12px;
+  gap: 8px;
 }
 
 .task-column,
@@ -305,6 +305,8 @@ pre {
   grid-area: task;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .log-column {
@@ -475,13 +477,19 @@ h2 {
 
 .form-stack {
   align-content: start;
-  gap: 10px;
+  gap: 8px;
 }
 
-.grid.two-up,
-.actions {
+.grid.two-up {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px);
+  justify-content: center;
   gap: 12px;
 }
 
@@ -494,10 +502,10 @@ h2 {
 input,
 select {
   width: 100%;
-  min-height: 40px;
+  min-height: 36px;
   border: 1px solid rgba(132, 53, 80, 0.14);
-  border-radius: 16px;
-  padding: 10px 14px;
+  border-radius: 14px;
+  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
@@ -524,10 +532,10 @@ select:focus {
 }
 
 button {
-  min-height: 40px;
+  min-height: 36px;
   border: 0;
-  border-radius: 16px;
-  padding: 10px 16px;
+  border-radius: 14px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, var(--accent), #f43f5e);
   color: #fff;
   cursor: pointer;
@@ -589,13 +597,13 @@ button:disabled {
 
 .status-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
 .status-card {
-  min-height: 64px;
-  padding: 10px 12px;
+  min-height: 56px;
+  padding: 8px 10px;
   border-radius: 22px;
   border: 1px solid rgba(132, 53, 80, 0.1);
   background: rgba(255, 255, 255, 0.64);
@@ -609,7 +617,7 @@ button:disabled {
 
 .status-card strong {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--ink);
   font-size: 0.94rem;
   overflow-wrap: anywhere;
@@ -625,6 +633,7 @@ button:disabled {
   background: transparent;
   overflow: hidden;
   height: 100%;
+  min-height: 128px;
   min-width: 0;
 }
 
