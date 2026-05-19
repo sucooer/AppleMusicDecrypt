@@ -27,11 +27,16 @@ const stateEls = {
   downloadSpeed: document.querySelector('#download-speed'),
   decryptSpeed: document.querySelector('#decrypt-speed'),
   activeTasks: document.querySelector('#active-tasks'),
+  footerEmoji: document.querySelector('#footer-emoji'),
+  pageLoadTime: document.querySelector('#page-load-time'),
+  serverUptime: document.querySelector('#server-uptime'),
   logOutput: document.querySelector('#log-output'),
   downloadBtn: document.querySelector('#download-btn'),
 };
 
 let lastTaskState = 'idle';
+const footerEmojis = ['🎵', '🎧', '⚡', '💿'];
+let footerEmojiIndex = 0;
 
 function idleTaskSnapshot() {
   return {
@@ -58,6 +63,37 @@ function presentTaskState(snapshot) {
 
 function presentWrapperStatus(status) {
   return status.ready ? '已连接' : '解密服务未连接';
+}
+
+function formatDuration(seconds) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+
+  if (days) return `${days}天 ${hours}小时`;
+  if (hours) return `${hours}小时 ${minutes}分`;
+  if (minutes) return `${minutes}分 ${secs}秒`;
+  return `${secs}秒`;
+}
+
+function renderPageLoadTime() {
+  const navigation = performance.getEntriesByType('navigation')[0];
+  const timing = performance.timing;
+  const modernLoadMs = navigation && navigation.responseEnd > navigation.requestStart
+    ? navigation.responseEnd - navigation.requestStart
+    : 0;
+  const legacyLoadMs = timing && timing.responseEnd && timing.requestStart
+    ? timing.responseEnd - timing.requestStart
+    : 0;
+  const loadMs = modernLoadMs || legacyLoadMs || performance.now();
+  stateEls.pageLoadTime.textContent = `${Math.max(1, Math.round(loadMs))}ms`;
+}
+
+function renderFooterEmoji() {
+  footerEmojiIndex = (footerEmojiIndex + 1) % footerEmojis.length;
+  stateEls.footerEmoji.textContent = footerEmojis[footerEmojiIndex];
 }
 
 function normalizeErrorMessage(error) {
@@ -155,6 +191,7 @@ function renderSystem(status) {
   stateEls.downloadSpeed.textContent = status.download_speed;
   stateEls.decryptSpeed.textContent = status.decrypt_speed;
   stateEls.activeTasks.textContent = String(status.active_tasks);
+  stateEls.serverUptime.textContent = formatDuration(status.server_uptime_seconds);
 
   if (status.ready) {
     stateEls.wrapperBanner.hidden = true;
@@ -226,3 +263,9 @@ function connectEvents() {
 attachEvents();
 refreshStatus().catch(showActionError);
 connectEvents();
+if (document.readyState === 'complete') {
+  requestAnimationFrame(renderPageLoadTime);
+} else {
+  window.addEventListener('load', () => requestAnimationFrame(renderPageLoadTime), { once: true });
+}
+setInterval(renderFooterEmoji, 2200);

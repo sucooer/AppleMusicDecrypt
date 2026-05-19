@@ -55,10 +55,11 @@ pre {
 .workbench {
   display: grid;
   grid-template-columns: minmax(420px, 0.92fr) minmax(520px, 1.08fr);
-  grid-template-rows: 320px minmax(0, 1fr);
+  grid-template-rows: 320px minmax(0, 1fr) auto;
   grid-template-areas:
     "hero log"
-    "task log";
+    "task log"
+    "footer footer";
   gap: 18px;
   height: 100dvh;
   max-width: 1500px;
@@ -237,6 +238,69 @@ pre {
 .log-column {
   grid-area: log;
   grid-template-rows: minmax(0, 1fr);
+}
+
+.site-footer {
+  grid-area: footer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid rgba(132, 53, 80, 0.12);
+  border-radius: 22px;
+  padding: 10px 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 247, 250, 0.62)),
+    linear-gradient(135deg, rgba(244, 114, 182, 0.1), rgba(125, 211, 252, 0.1));
+  box-shadow: var(--shadow-sm);
+  color: var(--muted);
+}
+
+.footer-metrics {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.footer-metrics span {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.footer-metrics strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.footer-emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(132, 53, 80, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  animation: footer-float 2.2s ease-in-out infinite;
+}
+
+.footer-metrics {
+  justify-content: center;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+@keyframes footer-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.04);
+  }
 }
 
 .page-header {
@@ -750,7 +814,8 @@ pre {
   }
 
   .task-column,
-  .log-column {
+  .log-column,
+  .site-footer {
     flex: 0 0 auto;
     width: 100%;
   }
@@ -828,6 +893,16 @@ pre {
   .scroll-region {
     max-height: 40dvh;
   }
+
+  .site-footer {
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .footer-metrics {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 640px) {
@@ -840,6 +915,12 @@ pre {
   dl div {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .footer-metrics {
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
   }
 }
 

@@ -123,6 +123,7 @@ class SystemStatusResponse(BaseModel):
     download_speed: str
     decrypt_speed: str
     active_tasks: int
+    server_uptime_seconds: int = 0
 
 
 class AuthResponse(BaseModel):

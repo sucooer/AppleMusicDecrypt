@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 
 from creart import it
 from src.api import WebAPI
@@ -34,6 +35,7 @@ class WebUIService:
         self._current_task = TaskSnapshot()
         self._completion_notified = False
         self._failure_notified = False
+        self._started_at = time.monotonic()
 
     @property
     def wrapper_manager(self):
@@ -239,6 +241,7 @@ class WebUIService:
             download_speed=self._measurer.download_speed(),
             decrypt_speed=self._measurer.decrypt_speed(),
             active_tasks=self._measurer.tasks_count(),
+            server_uptime_seconds=max(0, int(time.monotonic() - self._started_at)),
         )
 
     async def publish_system_status(self) -> None:
