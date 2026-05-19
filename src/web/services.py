@@ -52,6 +52,29 @@ class WebUIService:
         self._failure_notified = False
         return snapshot
 
+    def _has_active_song_task(self, song_id: str) -> bool:
+        manager = getattr(self._ripper, "download_manager", None)
+        get_task = getattr(manager, "get_task", None)
+        return bool(get_task(song_id)) if callable(get_task) else False
+
+    def present_task_state(self, snapshot: TaskSnapshot | None = None) -> str:
+        labels = {
+            "idle": "空闲",
+            "starting": "准备中",
+            "fetching": "正在获取信息",
+            "downloading": "正在下载",
+            "decrypting": "正在解密",
+            "saving": "正在保存",
+            "retrying": "正在重试",
+            "done": "已完成",
+            "failed": "失败",
+        }
+        target = snapshot or self._current_task
+        return labels.get(target.state, target.state)
+
+    def present_wrapper_status(self, status: SystemStatusResponse) -> str:
+        return "解密服务已连接" if status.ready else "解密服务未连接"
+
     async def _notify_current_task_if_needed(self) -> None:
         snapshot = self._current_task
         try:
@@ -99,8 +122,12 @@ class WebUIService:
                 state = "failed"
                 error = f"{len(failed_tracks)} 首歌曲失败"
             elif completed_tracks >= total_tracks:
-                state = "done"
-                error = None
+                if snapshot.task_type == "album":
+                    state = "saving"
+                    detail = f"已完成 {completed_tracks} / 共 {total_tracks}，等待专辑任务收尾"
+                else:
+                    state = "done"
+                    error = None
             elif state not in {"retrying", "failed"}:
                 state = "downloading"
 
@@ -299,6 +326,8 @@ class WebUIService:
         parsed = AppleMusicURL.parse_url(request.url)
         if not parsed:
             raise ValueError("Invalid Apple Music URL")
+        if parsed.type == URLType.Song and self._has_active_song_task(parsed.id):
+            raise ValueError("歌曲仍在下载队列或运行中，请等待当前任务结束后再重试")
 
         tracks: list[TrackSnapshot] = []
         title = None
@@ -385,6 +414,20 @@ class WebUIService:
         flags = Flags(force_save=snapshot.force, language=snapshot.language or it(Config).region.language)
 
         async def _retry_track(track: TrackSnapshot) -> None:
+            if self._has_active_song_task(track.id):
+                await self.handle_log_event(
+                    LogEntry(
+                        timestamp="",
+                        level="ERROR",
+                        source="task",
+                        message="歌曲仍在下载队列或运行中，请等待当前任务结束后再重试",
+                        item_type="song",
+                        item_id=track.id,
+                        item_name=track.title,
+                    )
+                )
+                return
+
             try:
                 song = Song(id=track.id, storefront=snapshot.storefront or "", url="", type=URLType.Song)
                 await self._ripper.rip_song(song, snapshot.codec or "alac", flags)

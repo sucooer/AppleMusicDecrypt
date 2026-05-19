@@ -4,87 +4,113 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AppleMusicDecrypt Web UI</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?v=no-error-card-20260519">
 </head>
 <body>
-  <main class="workbench">
-    <section class="panel control-column">
-      <header class="page-header">
-        <p class="eyebrow">本地下载控制台</p>
-        <h1>AppleMusicDecrypt</h1>
-      </header>
-
-      <div class="form-stack">
-        <label class="field field-url">
-          <span>Apple Music 链接</span>
-          <input id="url" type="url" placeholder="https://music.apple.com/...">
-        </label>
-        <div class="grid two-up">
-          <label class="field">
-            <span>编码</span>
-            <select id="codec">
-              <option value="alac">alac</option>
-              <option value="aac">aac</option>
-              <option value="ec3">ec3</option>
-              <option value="ac3">ac3</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>语言</span>
-            <select id="language">
-              <option value="zh-Hans-CN">zh-Hans-CN</option>
-              <option value="en-US">en-US</option>
-              <option value="ja">ja</option>
-            </select>
-          </label>
+  <main class="workbench page-shell">
+    <section class="hero-shell">
+      <div class="hero-backdrop" aria-hidden="true">
+        <div class="gradient-orb orb-a"></div>
+        <div class="gradient-orb orb-b"></div>
+        <div class="gradient-orb orb-c"></div>
+        <div class="artwork-cloud">
+          <article class="artwork-tile tile-a">
+            <span class="tile-kicker">ALAC</span>
+            <strong>Lossless</strong>
+            <span>24-bit / 192kHz</span>
+          </article>
+          <article class="artwork-tile tile-b">
+            <span class="tile-kicker">Playlist</span>
+            <strong>Batch Rip</strong>
+            <span>Album / Artist / MV</span>
+          </article>
+          <article class="artwork-tile tile-c">
+            <span class="tile-kicker">Wrapper</span>
+            <strong>Live Status</strong>
+            <span>Download / Decrypt</span>
+          </article>
         </div>
-        <label class="toggle"><input id="force" type="checkbox"> <span>强制覆盖已有文件</span></label>
-        <div class="actions">
-          <button id="download-btn">下载</button>
-          <button id="quality-btn" class="secondary">音质查询</button>
-        </div>
-        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       </div>
+
+      <section class="panel control-column">
+        <div class="hero-card panel control-column">
+          <div id="wrapper-banner" class="system-banner" hidden></div>
+
+          <div class="form-stack">
+            <label class="field field-url">
+              <span>Apple Music 链接</span>
+              <input id="url" type="url" placeholder="https://music.apple.com/...">
+            </label>
+            <label class="toggle"><input id="force" type="checkbox"> <span>强制覆盖已有文件</span></label>
+            <div class="actions">
+              <button id="download-btn" type="button">下载</button>
+            </div>
+            <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+          </div>
+        </div>
+      </section>
     </section>
 
     <section class="panel task-column">
+      <div class="status-cards">
+        <article class="status-card accent">
+          <span>状态</span>
+          <strong id="task-state">当前没有活动任务</strong>
+        </article>
+        <article class="status-card">
+          <span>下载速度</span>
+          <strong id="download-speed">0.00 kB/s</strong>
+        </article>
+        <article class="status-card">
+          <span>解密速度</span>
+          <strong id="decrypt-speed">0.00 kB/s</strong>
+        </article>
+        <article class="status-card">
+          <span>活跃任务</span>
+          <strong id="active-tasks">0</strong>
+        </article>
+        <article class="status-card">
+          <span>详情</span>
+          <strong id="task-detail">等待新的下载任务</strong>
+        </article>
+        <article class="status-card">
+          <span>专辑进度</span>
+          <strong id="album-progress">-</strong>
+        </article>
+        <article class="status-card">
+          <span>Wrapper</span>
+          <strong id="wm-ready">unknown</strong>
+        </article>
+        <article class="status-card">
+          <span>区域</span>
+          <strong id="wm-regions">-</strong>
+        </article>
+      </div>
+
       <section class="summary-card task-panel">
-        <h2>当前任务</h2>
-        <dl>
-          <div><dt>状态</dt><dd id="task-state">idle</dd></div>
-          <div><dt>详情</dt><dd id="task-detail">-</dd></div>
-          <div><dt>专辑进度</dt><dd id="album-progress">-</dd></div>
-          <div><dt>保存路径</dt><dd id="saved-path">-</dd></div>
-          <div><dt>错误</dt><dd id="task-error">-</dd></div>
-        </dl>
-        <div id="failed-panel" class="failed-panel" hidden>
+        <div class="task-summary-grid">
+        <article class="status-card detail-card saved-path-card">
+          <span>保存路径</span>
+          <strong id="saved-path">下载完成后会显示</strong>
+        </article>
+        <article id="failed-panel" class="status-card detail-card failed-panel">
           <div class="failed-header">
-            <strong>失败歌曲</strong>
+            <span>失败歌曲</span>
             <button id="retry-failed-btn" class="secondary" type="button">重试失败歌曲</button>
           </div>
           <ul id="failed-tracks" class="failed-tracks"></ul>
+        </article>
         </div>
-      </section>
-      <section class="quality-panel fill-panel">
-        <h2>音质结果</h2>
-        <pre id="quality-output" class="scroll-region">暂无音质查询</pre>
       </section>
     </section>
 
     <section class="panel log-column">
-      <div class="status-cards">
-        <article class="status-card"><span>下载速度</span><strong id="download-speed">0.00 kB/s</strong></article>
-        <article class="status-card"><span>解密速度</span><strong id="decrypt-speed">0.00 kB/s</strong></article>
-        <article class="status-card"><span>活跃任务</span><strong id="active-tasks">0</strong></article>
-        <article class="status-card"><span>Wrapper</span><strong id="wm-ready">unknown</strong></article>
-        <article class="status-card wide"><span>区域</span><strong id="wm-regions">-</strong></article>
-      </div>
-      <section class="log-panel fill-panel">
-        <h2>实时日志</h2>
+      <section class="log-panel">
+        <h2 class="log-title">实时日志</h2>
         <div id="log-output" class="scroll-region"></div>
       </section>
     </section>
   </main>
-  <script src="/static/app.js" defer></script>
+  <script src="/static/app.js?v=retry-active-guard-20260519" defer></script>
 </body>
 </html>

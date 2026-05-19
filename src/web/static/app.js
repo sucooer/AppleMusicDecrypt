@@ -1,14 +1,24 @@
+const TASK_STATE_COPY = {
+  idle: '当前没有活动任务',
+  starting: '准备中',
+  fetching: '正在获取信息',
+  downloading: '正在下载',
+  decrypting: '正在解密',
+  saving: '正在保存',
+  retrying: '正在重试',
+  done: '已完成',
+  failed: '已失败',
+};
+
 const stateEls = {
   url: document.querySelector('#url'),
-  codec: document.querySelector('#codec'),
-  language: document.querySelector('#language'),
   force: document.querySelector('#force'),
   notice: document.querySelector('#notice'),
+  wrapperBanner: document.querySelector('#wrapper-banner'),
   taskState: document.querySelector('#task-state'),
   taskDetail: document.querySelector('#task-detail'),
   albumProgress: document.querySelector('#album-progress'),
   savedPath: document.querySelector('#saved-path'),
-  taskError: document.querySelector('#task-error'),
   failedPanel: document.querySelector('#failed-panel'),
   failedTracks: document.querySelector('#failed-tracks'),
   retryFailedBtn: document.querySelector('#retry-failed-btn'),
@@ -17,16 +27,81 @@ const stateEls = {
   downloadSpeed: document.querySelector('#download-speed'),
   decryptSpeed: document.querySelector('#decrypt-speed'),
   activeTasks: document.querySelector('#active-tasks'),
-  qualityOutput: document.querySelector('#quality-output'),
   logOutput: document.querySelector('#log-output'),
+  downloadBtn: document.querySelector('#download-btn'),
 };
 
 let lastTaskState = 'idle';
+
+function idleTaskSnapshot() {
+  return {
+    state: 'idle',
+    detail: null,
+    saved_path: null,
+    error: null,
+    total_tracks: 0,
+    completed_tracks: 0,
+    failed_tracks: [],
+  };
+}
+
+function initialTaskSnapshot(snapshot) {
+  if (snapshot && snapshot.state === 'done') {
+    return idleTaskSnapshot();
+  }
+  return snapshot;
+}
+
+function presentTaskState(snapshot) {
+  return TASK_STATE_COPY[snapshot.state] || snapshot.state || TASK_STATE_COPY.idle;
+}
+
+function presentWrapperStatus(status) {
+  return status.ready ? '已连接' : '解密服务未连接';
+}
+
+function normalizeErrorMessage(error) {
+  if (error instanceof Error && typeof error.message === 'string') {
+    if (error.message && error.message !== '[object Object]') return error.message;
+  }
+
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+
+  if (error && typeof error === 'object') {
+    if (typeof error.detail === 'string' && error.detail.trim()) {
+      return error.detail;
+    }
+    if (typeof error.message === 'string' && error.message.trim() && error.message !== '[object Object]') {
+      return error.message;
+    }
+    try {
+      const serialized = JSON.stringify(error);
+      if (serialized && serialized !== '{}') return serialized;
+    } catch {
+      // Ignore JSON serialization failures and fall through to the default message.
+    }
+  }
+
+  return '发生未知错误，请查看实时日志。';
+}
 
 function showNotice(message, type = 'info') {
   stateEls.notice.textContent = message;
   stateEls.notice.className = `notice ${type}`;
   stateEls.notice.hidden = false;
+}
+
+function showActionError(error) {
+  const message = normalizeErrorMessage(error);
+  showNotice(message, 'error');
+  appendLog({
+    timestamp: new Date().toISOString(),
+    source: 'system',
+    level: 'ERROR',
+    message,
+  });
 }
 
 function appendLog(line) {
@@ -39,7 +114,7 @@ function appendLog(line) {
 function renderFailedTracks(snapshot) {
   const failedTracks = snapshot.failed_tracks || [];
   stateEls.failedTracks.replaceChildren();
-  stateEls.failedPanel.hidden = failedTracks.length === 0;
+  stateEls.failedPanel.hidden = false;
   stateEls.retryFailedBtn.disabled = failedTracks.length === 0 || snapshot.state === 'retrying';
 
   for (const track of failedTracks) {
@@ -55,18 +130,17 @@ function renderFailedTracks(snapshot) {
 
 function renderTask(snapshot) {
   const nextState = snapshot.state || 'idle';
-  stateEls.taskState.textContent = snapshot.state || 'idle';
-  stateEls.taskDetail.textContent = snapshot.detail || snapshot.url || '-';
+  const stateCopy = presentTaskState(snapshot);
+
+  stateEls.taskState.textContent = stateCopy;
+  stateEls.taskDetail.textContent = snapshot.detail || snapshot.url || '等待新的下载任务';
   stateEls.albumProgress.textContent = snapshot.total_tracks
     ? `${snapshot.completed_tracks || 0} / ${snapshot.total_tracks}`
-    : '-';
-  stateEls.savedPath.textContent = snapshot.saved_path || '-';
-  stateEls.taskError.textContent = snapshot.error || '-';
+    : '—';
+  stateEls.savedPath.textContent = snapshot.saved_path || '下载完成后会显示';
   renderFailedTracks(snapshot);
 
-  if (nextState === 'done' && lastTaskState !== 'done') {
-    showNotice(`下载完成：${snapshot.saved_path || '文件已保存'}`, 'success');
-  } else if (nextState === 'failed' && lastTaskState !== 'failed') {
+  if (nextState === 'failed' && lastTaskState !== 'failed') {
     showNotice(`下载失败：${snapshot.error || '请查看实时日志'}`, 'error');
   } else if (nextState === 'retrying' && lastTaskState !== 'retrying') {
     showNotice('正在重试失败歌曲', 'info');
@@ -76,11 +150,18 @@ function renderTask(snapshot) {
 }
 
 function renderSystem(status) {
-  stateEls.wmReady.textContent = String(status.ready);
-  stateEls.wmRegions.textContent = (status.regions || []).join(', ') || '-';
+  stateEls.wmReady.textContent = presentWrapperStatus(status);
+  stateEls.wmRegions.textContent = (status.regions || []).join(', ') || '暂无可用区域';
   stateEls.downloadSpeed.textContent = status.download_speed;
   stateEls.decryptSpeed.textContent = status.decrypt_speed;
   stateEls.activeTasks.textContent = String(status.active_tasks);
+
+  if (status.ready) {
+    stateEls.wrapperBanner.hidden = true;
+  } else {
+    stateEls.wrapperBanner.hidden = false;
+    stateEls.wrapperBanner.textContent = '解密服务未连接，页面可访问，但当前无法开始下载。';
+  }
 }
 
 async function postJSON(url, payload) {
@@ -100,24 +181,28 @@ async function postJSON(url, payload) {
 }
 
 async function refreshStatus() {
-  renderSystem(await fetch('/api/system/status').then((res) => res.json()));
-  renderTask(await fetch('/api/task/current').then((res) => res.json()));
+  const [systemStatus, taskStatus] = await Promise.all([
+    fetch('/api/system/status').then((res) => res.json()),
+    fetch('/api/task/current').then((res) => res.json()),
+  ]);
+  renderSystem(systemStatus);
+  renderTask(initialTaskSnapshot(taskStatus));
 }
 
 async function startDownload() {
-  const data = await postJSON('/api/task/download', {
-    url: stateEls.url.value,
-    codec: stateEls.codec.value,
-    language: stateEls.language.value,
-    force: stateEls.force.checked,
-  });
-  showNotice('下载任务已提交', 'info');
-  renderTask(data);
-}
-
-async function lookupQuality() {
-  const data = await postJSON('/api/task/quality', { url: stateEls.url.value });
-  stateEls.qualityOutput.textContent = JSON.stringify(data.items, null, 2);
+  stateEls.downloadBtn.disabled = true;
+  stateEls.downloadBtn.textContent = '正在提交…';
+  try {
+    const data = await postJSON('/api/task/download', {
+      url: stateEls.url.value,
+      force: stateEls.force.checked,
+    });
+    showNotice('下载任务已提交', 'info');
+    renderTask(data);
+  } finally {
+    stateEls.downloadBtn.disabled = false;
+    stateEls.downloadBtn.textContent = '下载';
+  }
 }
 
 async function retryFailedTracks() {
@@ -127,9 +212,8 @@ async function retryFailedTracks() {
 }
 
 function attachEvents() {
-  document.querySelector('#download-btn').addEventListener('click', () => startDownload().catch((error) => appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'ERROR', message: error.message })));
-  document.querySelector('#quality-btn').addEventListener('click', () => lookupQuality().catch((error) => appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'ERROR', message: error.message })));
-  stateEls.retryFailedBtn.addEventListener('click', () => retryFailedTracks().catch((error) => appendLog({ timestamp: new Date().toISOString(), source: 'system', level: 'ERROR', message: error.message })));
+  stateEls.downloadBtn.addEventListener('click', () => startDownload().catch(showActionError));
+  stateEls.retryFailedBtn.addEventListener('click', () => retryFailedTracks().catch(showActionError));
 }
 
 function connectEvents() {
@@ -140,5 +224,5 @@ function connectEvents() {
 }
 
 attachEvents();
-refreshStatus().catch(console.error);
+refreshStatus().catch(showActionError);
 connectEvents();

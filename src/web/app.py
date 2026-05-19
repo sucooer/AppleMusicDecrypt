@@ -17,7 +17,7 @@ from src.web.services import WebUIService
 STATIC_DIR = Path(__file__).with_name("static")
 
 
-def create_app(service: WebUIService) -> FastAPI:
+def create_app(service: WebUIService, enable_lifespan: bool = True) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         service.attach_log_sink(asyncio.get_running_loop())
@@ -30,7 +30,7 @@ def create_app(service: WebUIService) -> FastAPI:
                 await status_task
             service.detach_log_sink()
 
-    app = FastAPI(title="AppleMusicDecrypt Web UI", lifespan=lifespan)
+    app = FastAPI(title="AppleMusicDecrypt Web UI", lifespan=lifespan if enable_lifespan else None)
     auth = WebAuthService(service.wrapper_manager)
 
     @app.get("/api/system/status")
