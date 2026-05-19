@@ -110,6 +110,58 @@ class WebUIService:
             if track.state == "failed"
         ]
 
+    def _mark_retry_track_done_if_unresolved(self, track: TrackSnapshot) -> None:
+        if self._current_task.task_type != "album":
+            return
+
+        tracks = []
+        changed = False
+        for current_track in self._current_task.tracks:
+            if current_track.id != track.id:
+                tracks.append(current_track)
+                continue
+            if current_track.state not in {"done", "failed"}:
+                tracks.append(current_track.model_copy(update={"state": "done", "error": None}))
+                changed = True
+            else:
+                tracks.append(current_track)
+
+        if changed:
+            self._current_task = self._recount_album_progress(self._current_task, tracks)
+
+    def _finish_retry_batch(self) -> TaskSnapshot:
+        snapshot = self._current_task
+        if snapshot.task_type != "album":
+            return snapshot
+
+        failed_tracks = self._failed_tracks(snapshot.tracks)
+        completed_tracks = sum(1 for track in snapshot.tracks if track.state == "done")
+        total_tracks = snapshot.total_tracks or len(snapshot.tracks)
+
+        if failed_tracks:
+            state = "failed"
+            detail = f"重试完成，仍有 {len(failed_tracks)} 首歌曲失败"
+            error = f"{len(failed_tracks)} 首歌曲失败"
+        elif total_tracks and completed_tracks >= total_tracks:
+            state = "done"
+            detail = "Finished ripping"
+            error = None
+        else:
+            state = "failed"
+            detail = f"重试结束，但仅完成 {completed_tracks} / 共 {total_tracks}"
+            error = detail
+
+        self._current_task = snapshot.model_copy(
+            update={
+                "state": state,
+                "detail": detail,
+                "error": error,
+                "completed_tracks": completed_tracks,
+                "failed_tracks": failed_tracks,
+            }
+        )
+        return self._current_task
+
     def _recount_album_progress(self, snapshot: TaskSnapshot, tracks: list[TrackSnapshot]) -> TaskSnapshot:
         completed_tracks = sum(1 for track in tracks if track.state == "done")
         failed_tracks = self._failed_tracks(tracks)
@@ -124,7 +176,10 @@ class WebUIService:
                 state = "failed"
                 error = f"{len(failed_tracks)} 首歌曲失败"
             elif completed_tracks >= total_tracks:
-                if snapshot.task_type == "album":
+                if snapshot.state == "done":
+                    state = "done"
+                    error = None
+                elif snapshot.task_type == "album":
                     state = "saving"
                     detail = f"已完成 {completed_tracks} / 共 {total_tracks}，等待专辑任务收尾"
                 else:
@@ -234,10 +289,17 @@ class WebUIService:
         set_log_sink(None)
 
     async def system_status(self) -> SystemStatusResponse:
-        status = await self._wrapper_manager.status()
+        try:
+            status = await self._wrapper_manager.status()
+            ready = bool(getattr(status, "ready", False))
+            regions = list(getattr(status, "regions", []))
+        except Exception:
+            ready = False
+            regions = []
+
         return SystemStatusResponse(
-            ready=bool(getattr(status, "ready", False)),
-            regions=list(getattr(status, "regions", [])),
+            ready=ready,
+            regions=regions,
             download_speed=self._measurer.download_speed(),
             decrypt_speed=self._measurer.decrypt_speed(),
             active_tasks=self._measurer.tasks_count(),
@@ -434,6 +496,7 @@ class WebUIService:
             try:
                 song = Song(id=track.id, storefront=snapshot.storefront or "", url="", type=URLType.Song)
                 await self._ripper.rip_song(song, snapshot.codec or "alac", flags)
+                self._mark_retry_track_done_if_unresolved(track)
             except Exception as exc:
                 await self.handle_log_event(
                     LogEntry(
@@ -447,8 +510,13 @@ class WebUIService:
                     )
                 )
 
-        for track in failed_tracks:
-            asyncio.create_task(_retry_track(track))
+        async def _retry_batch() -> None:
+            await asyncio.gather(*(_retry_track(track) for track in failed_tracks))
+            self._finish_retry_batch()
+            await self._event_bus.publish("task.state", self._current_task.model_dump())
+            await self._notify_current_task_if_needed()
+
+        asyncio.create_task(_retry_batch())
 
         return self._current_task
 

@@ -57,9 +57,9 @@ class WrapperManager:
         self._stub = WrapperManagerServiceStub(self._channel)
         return self
 
-    @alru_cache
+    @alru_cache(ttl=1)
     async def status(self) -> StatusData:
-        resp: StatusReply = await self._stub.Status(google_dot_protobuf_dot_empty__pb2.Empty)
+        resp: StatusReply = await self._stub.Status(google_dot_protobuf_dot_empty__pb2.Empty, timeout=2)
         if resp.header.code != 0:
             raise WrapperManagerException(resp.header.msg)
         return resp.data
@@ -109,23 +109,36 @@ class WrapperManager:
 
     async def decrypt_init(self, on_success: Callable[[str, str, bytes, int], Awaitable[None]],
                            on_failure: Callable[[str, str, bytes, int], Awaitable[None]]):
-        stream = self._stub.Decrypt(self._decrypt_request_generator())
         safely_create_task(self._decrypt_keepalive())
-        async for reply in stream:
-            reply: DecryptReply
-            if reply.data.adam_id == "KEEPALIVE":
-                continue
-            match reply.header.code:
-                case -1:
-                    safely_create_task(
-                        on_failure(reply.data.adam_id, reply.data.key, reply.data.sample, reply.data.sample_index))
-                case 0:
-                    safely_create_task(
-                        on_success(reply.data.adam_id, reply.data.key, reply.data.sample, reply.data.sample_index))
+        warning_logged = False
+        while True:
+            try:
+                stream = self._stub.Decrypt(self._decrypt_request_generator())
+                async for reply in stream:
+                    warning_logged = False
+                    reply: DecryptReply
+                    if reply.data.adam_id == "KEEPALIVE":
+                        continue
+                    match reply.header.code:
+                        case -1:
+                            safely_create_task(
+                                on_failure(reply.data.adam_id, reply.data.key, reply.data.sample, reply.data.sample_index))
+                        case 0:
+                            safely_create_task(
+                                on_success(reply.data.adam_id, reply.data.key, reply.data.sample, reply.data.sample_index))
+            except Exception as exc:
+                message = f"Wrapper decrypt stream unavailable, retrying: {exc}"
+                if warning_logged:
+                    it(GlobalLogger).logger.debug(message)
+                else:
+                    it(GlobalLogger).logger.warning(message)
+                    warning_logged = True
+                await asyncio.sleep(5)
 
     async def _decrypt_keepalive(self):
         while True:
-            await self._decrypt_queue.put(DecryptRequest(data=DecryptData(adam_id="KEEPALIVE")))
+            if self._decrypt_queue.empty():
+                await self._decrypt_queue.put(DecryptRequest(data=DecryptData(adam_id="KEEPALIVE")))
             await asyncio.sleep(15)
 
     @retry(retry=((retry_if_exception_type(WrapperManagerException)) & (
