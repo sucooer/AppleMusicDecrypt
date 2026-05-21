@@ -48,6 +48,46 @@
             </div>
             <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
           </div>
+
+          <section class="account-panel is-collapsed" id="account-panel">
+            <button id="account-toggle" class="account-header account-toggle" type="button" aria-expanded="false" aria-controls="account-body">
+              <div class="section-intro">
+                <span class="eyebrow">Wrapper Account</span>
+                <h2>账号面板</h2>
+              </div>
+              <div class="account-toggle-meta">
+                <span id="auth-pill" class="state-pill is-idle">未登录</span>
+                <span id="account-chevron" class="account-chevron" aria-hidden="true">展开</span>
+              </div>
+            </button>
+
+            <p id="auth-summary" class="account-summary">
+              使用 Apple Music 账号登录 wrapper-manager。若需要两步验证，先提交账号密码，再输入验证码继续登录。
+            </p>
+
+            <div id="account-body" class="account-body" hidden>
+              <div id="auth-notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+              <div class="form-stack">
+                <label class="field">
+                  <span>Apple Music 用户名</span>
+                  <input id="auth-username" type="text" autocomplete="username" placeholder="appleid@example.com">
+                </label>
+                <label class="field">
+                  <span>密码</span>
+                  <input id="auth-password" type="password" autocomplete="current-password" placeholder="输入账号密码">
+                </label>
+                <label id="twofa-field" class="field" hidden>
+                  <span>两步验证码</span>
+                  <input id="auth-twofa" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="输入 2FA 验证码">
+                </label>
+                <div class="auth-actions">
+                  <button id="login-btn" type="button">登录账号</button>
+                  <button id="logout-btn" class="secondary" type="button">清除当前账号</button>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </section>
     </section>

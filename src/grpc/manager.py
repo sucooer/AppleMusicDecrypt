@@ -1,5 +1,6 @@
 import asyncio
 import json
+from contextlib import suppress
 from typing import Awaitable, Callable, Type
 
 from async_lru import alru_cache
@@ -68,6 +69,7 @@ class WrapperManager:
         await self._login_lock.acquire()
 
         login_queue = asyncio.Queue()
+        queue_closed = False
 
         async def request_stream():
             while True:
@@ -78,25 +80,36 @@ class WrapperManager:
 
         stream = self._stub.Login(request_stream())
 
-        await login_queue.put(LoginRequest(data=LoginData(username=username, password=password)))
+        try:
+            await login_queue.put(LoginRequest(data=LoginData(username=username, password=password)))
+            stream_iter = aiter(stream)
 
-        async for reply in stream:
-            reply: LoginReply
-            match reply.header.code:
-                case -1:
-                    self._login_lock.release()
-                    await login_queue.put(None)
-                    raise WrapperManagerException(reply.header.msg)
-                case 0:
-                    self._login_lock.release()
-                    await login_queue.put(None)
-                    return
-                case 2:
-                    two_step_code = await on_2fa(username, password)
-                    await login_queue.put(LoginRequest(data=LoginData(
-                        username=username,
-                        password=password,
-                        two_step_code=two_step_code)))
+            while True:
+                try:
+                    reply: LoginReply = await asyncio.wait_for(anext(stream_iter), timeout=30)
+                except StopAsyncIteration as exc:
+                    raise WrapperManagerException("Login stream closed before completion") from exc
+                except asyncio.TimeoutError as exc:
+                    raise WrapperManagerException("Login request timed out. Please try again.") from exc
+
+                match reply.header.code:
+                    case -1:
+                        raise WrapperManagerException(reply.header.msg)
+                    case 0:
+                        return
+                    case 2:
+                        two_step_code = await on_2fa(username, password)
+                        await login_queue.put(LoginRequest(data=LoginData(
+                            username=username,
+                            password=password,
+                            two_step_code=two_step_code)))
+        finally:
+            self._login_lock.release()
+            if not queue_closed:
+                await login_queue.put(None)
+                queue_closed = True
+            with suppress(Exception):
+                stream.cancel()
 
     async def decrypt(self, adam_id: str, key: str, sample: bytes, sample_index: int):
         await self._decrypt_queue.put(

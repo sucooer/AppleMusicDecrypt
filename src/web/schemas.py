@@ -119,6 +119,8 @@ class QualityResponse(BaseModel):
 
 class SystemStatusResponse(BaseModel):
     ready: bool
+    wrapper_state: Literal["ready", "no_account", "degraded", "unreachable"]
+    wrapper_message: str
     regions: list[str]
     download_speed: str
     decrypt_speed: str

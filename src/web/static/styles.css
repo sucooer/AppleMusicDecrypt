@@ -13,6 +13,8 @@
   --blue-soft: rgba(37, 99, 235, 0.12);
   --success: #166534;
   --success-bg: rgba(240, 253, 244, 0.92);
+  --warning: #9a3412;
+  --warning-bg: rgba(255, 247, 237, 0.94);
   --error: #9f1239;
   --error-bg: rgba(255, 241, 242, 0.94);
   --border: rgba(120, 67, 90, 0.16);
@@ -469,6 +471,25 @@ h2 {
   color: var(--error);
 }
 
+.state-pill.is-success,
+.state-pill.is-ready {
+  background: rgba(22, 101, 52, 0.12);
+  color: var(--success);
+}
+
+.state-pill.is-warning,
+.state-pill.is-need-2fa,
+.state-pill.is-degraded {
+  background: rgba(154, 52, 18, 0.12);
+  color: var(--warning);
+}
+
+.state-pill.is-unreachable,
+.state-pill.is-failed {
+  background: rgba(190, 24, 93, 0.12);
+  color: var(--error);
+}
+
 .form-stack,
 .field {
   display: grid;
@@ -490,6 +511,71 @@ h2 {
   display: grid;
   grid-template-columns: minmax(180px, 320px);
   justify-content: center;
+  gap: 12px;
+}
+
+.account-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid rgba(132, 53, 80, 0.12);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.account-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.account-toggle {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  box-shadow: none;
+  transform: none;
+}
+
+.account-toggle:hover,
+.account-toggle:active {
+  box-shadow: none;
+  transform: none;
+}
+
+.account-toggle-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-chevron {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.account-summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.account-body {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -588,6 +674,12 @@ button:disabled {
   border-color: rgba(190, 24, 93, 0.18);
   background: var(--error-bg);
   color: var(--error);
+}
+
+.notice.warning {
+  border-color: rgba(154, 52, 18, 0.18);
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 
 .section-intro {
@@ -981,7 +1073,8 @@ pre {
   }
 
   .grid.two-up,
-  .actions {
+  .actions,
+  .auth-actions {
     grid-template-columns: 1fr;
   }
 

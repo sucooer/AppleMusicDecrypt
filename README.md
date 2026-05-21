@@ -148,6 +148,25 @@ docker build -t applemusicdecrypt-all .
 docker run -d --name amd-all --restart unless-stopped -p 9527:9527 -v /path/to/downloads:/app/downloads applemusicdecrypt-all
 ```
 
+If `/app/config.toml` is missing, the container automatically creates it from `config.example.toml` on startup.
+
+To persist custom settings such as wrapper-manager, notifications, or `media-user-token`, mount your own `config.toml`:
+
+```bash
+docker run -d --name amd-all --restart unless-stopped \
+  -p 9527:9527 \
+  -v /path/to/config.toml:/app/config.toml:ro \
+  -v /path/to/downloads:/app/downloads \
+  applemusicdecrypt-all
+```
+
+You can also use Docker Compose. `docker-compose.yml` always mounts `./config.toml` into the container:
+
+```bash
+mkdir -p downloads
+docker compose up -d --build
+```
+
 ### ServerChan3 Notifications
 
 The Web UI can send ServerChan3 notifications when a download completes, when a task fails, or when a track in an album fails.

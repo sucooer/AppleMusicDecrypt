@@ -1,0 +1,19 @@
+services:
+  applemusicdecrypt:
+    build:
+      context: .
+    image: applemusicdecrypt-all
+    container_name: amd-all
+    restart: unless-stopped
+    ports:
+      - "9527:9527"
+    volumes:
+      - type: bind
+        source: ./config.toml
+        target: /app/config.toml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./downloads
+        target: /app/downloads

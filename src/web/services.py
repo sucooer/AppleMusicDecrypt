@@ -295,10 +295,24 @@ class WebUIService:
             regions = list(getattr(status, "regions", []))
         except Exception:
             ready = False
+            wrapper_state = "unreachable"
+            wrapper_message = "解密服务未连接，页面可访问，但当前无法开始下载。"
             regions = []
+        else:
+            if ready:
+                wrapper_state = "ready"
+                wrapper_message = "解密服务已连接，可以开始下载。"
+            elif regions:
+                wrapper_state = "degraded"
+                wrapper_message = "解密服务已连接，但正在准备可用实例，请稍后再试。"
+            else:
+                wrapper_state = "no_account"
+                wrapper_message = "解密服务可访问，但当前无可用账号，请先登录。"
 
         return SystemStatusResponse(
             ready=ready,
+            wrapper_state=wrapper_state,
+            wrapper_message=wrapper_message,
             regions=regions,
             download_speed=self._measurer.download_speed(),
             decrypt_speed=self._measurer.decrypt_speed(),

@@ -19,6 +19,8 @@ class WebAuthService:
         except WrapperManagerException as exc:
             if "2FA" in exc.msg or "2FA code required" in exc.msg:
                 return AuthResponse(status="need_2fa", message=str(exc.msg))
+            if "already login" in exc.msg:
+                return AuthResponse(status="failed", message="该账号已登录。如需切换，请先清除当前账号。")
             return AuthResponse(status="failed", message=str(exc.msg))
         return AuthResponse(status="success", message="Login success")
 
