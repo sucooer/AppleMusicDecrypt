@@ -60,6 +60,7 @@ const stateEls = {
 let lastTaskState = 'idle';
 let latestSystemStatus = null;
 let accountPanelExpanded = false;
+let lastAuthForceExpand = false;
 const footerEmojis = ['🎵', '🎧', '⚡', '💿'];
 let footerEmojiIndex = 0;
 
@@ -372,9 +373,11 @@ function renderAuthPanel(status = latestSystemStatus) {
   if (!stateEls.authUsername.value.trim() && authState.username) {
     stateEls.authUsername.value = authState.username;
   }
-  if (authState.busy || authState.requiresTwoFactor || authState.status === 'failed') {
+  const shouldForceExpand = authState.busy || authState.requiresTwoFactor || authState.status === 'failed';
+  if (shouldForceExpand && !lastAuthForceExpand) {
     setAccountPanelExpanded(true);
   }
+  lastAuthForceExpand = shouldForceExpand;
   syncAuthButtons();
 }
 

@@ -35,6 +35,10 @@ body {
   height: 100%;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -571,6 +575,11 @@ h2 {
 .account-body {
   display: grid;
   gap: 12px;
+}
+
+.account-panel.is-collapsed .account-summary,
+.account-panel.is-collapsed .account-body {
+  display: none !important;
 }
 
 .auth-actions {
