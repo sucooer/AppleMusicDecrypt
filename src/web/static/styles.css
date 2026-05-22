@@ -528,6 +528,12 @@ h2 {
   background: rgba(255, 255, 255, 0.48);
 }
 
+.account-panel,
+.account-panel * {
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+}
+
 .account-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -541,9 +547,16 @@ h2 {
   padding: 0;
   background: transparent;
   color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
   text-align: left;
   box-shadow: none;
   transform: none;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .account-toggle:hover,
@@ -556,6 +569,10 @@ h2 {
 .account-toggle:focus-visible {
   outline: none;
   box-shadow: none;
+}
+
+.account-toggle::-moz-focus-inner {
+  border: 0;
 }
 
 .account-toggle-meta {
