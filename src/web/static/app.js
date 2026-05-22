@@ -302,7 +302,7 @@ function deriveAuthPresentation(status) {
   if (authState.busy) {
     return {
       pill: { label: '处理中', className: 'is-starting' },
-      summary: '正在与 wrapper-manager 通信，请稍候。',
+      summary: '正在处理账号请求，请稍候。',
     };
   }
 
@@ -317,7 +317,7 @@ function deriveAuthPresentation(status) {
     return {
       pill: AUTH_STATE_COPY.failed,
       summary: authState.message || (knownUsername
-        ? `当前记录账号：${knownUsername}。登录失败，请检查日志或重试。`
+        ? `账号：${knownUsername}。登录失败，请重试。`
         : '登录失败，请检查日志或重试。'),
     };
   }
@@ -334,15 +334,15 @@ function deriveAuthPresentation(status) {
       return {
         pill: { label: '已连接', className: 'is-ready' },
         summary: knownUsername
-          ? `当前账号：${knownUsername}。wrapper-manager 已连接，可以直接开始下载。`
-          : '当前 wrapper-manager 已有可用账号和区域，可以直接开始下载。',
+          ? `账号：${knownUsername}。`
+          : '已有可用账号。',
       };
     case 'no_account':
       return {
         pill: { label: '待登录', className: 'is-warning' },
         summary: knownUsername
-          ? `当前记录账号：${knownUsername}。如需重新使用，请直接登录；如需彻底移除，请清除当前账号。`
-          : '当前 wrapper-manager 无可用账号。请在这里登录 Apple Music 账号后再下载。',
+          ? `账号：${knownUsername}。请重新登录或清除账号。`
+          : '当前无可用账号，请先登录。',
       };
     case 'degraded':
       return {

@@ -108,12 +108,6 @@ Run the local web UI:
 poetry run python web_main.py
 ```
 
-If you use the local virtual environment directly:
-
-```bash
-.venv/bin/python web_main.py
-```
-
 Open `http://127.0.0.1:9527`.
 
 The Web UI provides:
